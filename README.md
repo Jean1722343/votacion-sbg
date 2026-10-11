@@ -54,6 +54,19 @@ Formato de transcripción (una línea por intervención):
 
 Si cambias las reglas, pégalas en Firebase Console → Firestore → Reglas → Publicar.
 
+## Pruebas
+
+Todo se prueba contra un Firebase **local** (emulador), sin tocar la votación real. Requiere Node y Java.
+
+```
+cd tests
+npm install
+npm run test:reglas      # 22 pruebas de seguridad de firestore.rules
+npm run emulador         # Firebase local para probar la web a mano
+```
+
+Con el emulador corriendo, abre `http://127.0.0.1:5173/?emulador` (sirviendo la carpeta con `python -m http.server 5173`): la web usa el Firebase local y puedes crear votantes de prueba.
+
 ## Privacidad
 
 El repositorio es público: todo lo que pongas en `data/`, `media/` y `transcripciones/` lo puede ver cualquiera que tenga el enlace del repo o del sitio.

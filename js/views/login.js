@@ -1,7 +1,7 @@
-import { admin } from "../../data/config.js?v=20261011034327";
-import { state, isClaimed, createAccount, signIn } from "../store.js?v=20261011034327";
-import { VOTES_PER_VOTER, MIN_PASSWORD } from "../firebase-config.js?v=20261011034327";
-import { esc, initials, friendlyError, voterColor } from "../ui.js?v=20261011034327";
+import { admin } from "../../data/config.js?v=20261011104644";
+import { state, isClaimed, createAccount, signIn } from "../store.js?v=20261011104644";
+import { VOTES_PER_VOTER, MIN_PASSWORD } from "../firebase-config.js?v=20261011104644";
+import { esc, initials, friendlyError, voterColor } from "../ui.js?v=20261011104644";
 
 let selected = null;
 // Si la cuenta existe pero aún no aparece como reclamada, forzamos el modo "entrar".

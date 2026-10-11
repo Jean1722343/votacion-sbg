@@ -2,11 +2,11 @@ import {
   auth, db, collection, doc, onSnapshot, setDoc, serverTimestamp, onAuthStateChanged,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as fbSignOut,
   updatePassword, reauthenticateWithCredential, EmailAuthProvider,
-} from "./firebase.js?v=20261011034327";
-import { votacionAbierta, votantes, admin } from "../data/config.js?v=20261011034327";
-import { candidatos } from "../data/candidatos.js?v=20261011034327";
-import { VOTES_PER_VOTER, EMAIL_DOMAIN } from "./firebase-config.js?v=20261011034327";
-import { registerVoters } from "./ui.js?v=20261011034327";
+} from "./firebase.js?v=20261011104644";
+import { votacionAbierta, votantes, admin } from "../data/config.js?v=20261011104644";
+import { candidatos } from "../data/candidatos.js?v=20261011104644";
+import { VOTES_PER_VOTER, EMAIL_DOMAIN } from "./firebase-config.js?v=20261011104644";
+import { registerVoters } from "./ui.js?v=20261011104644";
 
 // Normaliza los archivos de /data (en español) al modelo que usan las vistas.
 function toCandidate(c, i) {

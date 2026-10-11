@@ -2,3 +2,4 @@ node_modules/
 .firebase/
 *.local.*
 .DS_Store
+*.log

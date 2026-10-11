@@ -169,33 +169,51 @@ export function toast(message, type = "ok") {
   toastTimer = setTimeout(() => el.classList.remove("show"), 3200);
 }
 
+// Resuelve en cuanto se toca un botón (no depende del evento "close", que Chrome
+// puede retrasar si la pestaña pasa a segundo plano justo al confirmar).
 export function confirmDialog({ title, body, confirm = "Confirmar", cancel = "Cancelar", danger = false }) {
   const dialog = document.getElementById("dialog");
+  if (dialog.open) dialog.close();
   dialog.innerHTML = `
-    <form method="dialog" class="dialog-card">
+    <div class="dialog-card" role="document">
       <h3>${esc(title)}</h3>
       <div class="dialog-body">${body}</div>
       <div class="dialog-actions">
-        <button class="btn btn-ghost" value="cancel">${esc(cancel)}</button>
-        <button class="btn ${danger ? "btn-danger" : "btn-primary"}" value="ok" autofocus>${esc(confirm)}</button>
+        <button type="button" class="btn btn-ghost" data-answer="cancel">${esc(cancel)}</button>
+        <button type="button" class="btn ${danger ? "btn-danger" : "btn-primary"}" data-answer="ok" autofocus>${esc(confirm)}</button>
       </div>
-    </form>`;
+    </div>`;
   dialog.showModal();
   return new Promise((resolve) => {
-    dialog.addEventListener("close", () => resolve(dialog.returnValue === "ok"), { once: true });
+    let settled = false;
+    const finish = (answer) => {
+      if (settled) return;
+      settled = true;
+      dialog.removeEventListener("cancel", onCancel);
+      if (dialog.open) dialog.close(answer);
+      resolve(answer === "ok");
+    };
+    const onCancel = (e) => {
+      e.preventDefault();
+      finish("cancel");
+    };
+    dialog.addEventListener("cancel", onCancel); // tecla Escape
+    dialog.querySelectorAll("[data-answer]").forEach((b) =>
+      b.addEventListener("click", () => finish(b.dataset.answer)),
+    );
   });
 }
 
 export function friendlyError(err) {
   const code = err?.code || "";
   const map = {
-    "auth/invalid-credential": "PIN incorrecto.",
-    "auth/wrong-password": "PIN incorrecto.",
+    "auth/invalid-credential": "Contraseña incorrecta.",
+    "auth/wrong-password": "Contraseña incorrecta.",
     "auth/user-not-found": "Ese votante no tiene cuenta todavía.",
     "auth/too-many-requests": "Demasiados intentos. Espera un momento.",
     "auth/network-request-failed": "Sin conexión. Revisa tu internet.",
     "auth/email-already-in-use": "Ya existe una cuenta con ese nombre.",
-    "auth/weak-password": "El PIN debe tener al menos 6 caracteres.",
+    "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
     "auth/operation-not-allowed": "El inicio con correo/contraseña no está habilitado en Firebase.",
     "permission-denied": "No tienes permiso para esto (o la votación está cerrada).",
   };
