@@ -1,4 +1,4 @@
-// Candidatos a Group Growth. Edita este archivo y sube los cambios a GitHub.
+// Candidatos al Core Team. Edita este archivo y sube los cambios a GitHub.
 //
 // Campos (todos opcionales salvo id y nombre):
 //   id            identificador fijo, minúsculas sin espacios. No lo cambies después de que haya votos.

@@ -1,6 +1,6 @@
-import { state, results, myVote, voterName, markViewed } from "../store.js";
+import { state, myVote, markViewed } from "../store.js";
 import {
-  esc, avatar, accentOf, socialLinks, voterChip, mediaEmbed, renderTranscript,
+  esc, avatar, accentOf, socialLinks, mediaEmbed, renderTranscript,
   formatDate, safeUrl, wordCount, toast,
 } from "../ui.js";
 
@@ -29,7 +29,6 @@ export function render(root, { params, fresh }) {
     queries.clear();
   }
   const accent = accentOf(c, index);
-  const row = results().rows.find((r) => r.candidate.id === c.id);
   const mine = (myVote()?.picks || []).includes(c.id);
   const prev = state.candidates[(index - 1 + state.candidates.length) % state.candidates.length];
   const next = state.candidates[(index + 1) % state.candidates.length];
@@ -61,20 +60,13 @@ export function render(root, { params, fresh }) {
         <p class="lead">${esc([c.career, c.semester].filter(Boolean).join(" · ") || "Perfil por completar")}</p>
         ${socialLinks(c.socials)}
       </div>
-      <aside class="profile-score">
-        <b>${row?.count ?? 0}</b>
-        <small>votos${row?.rank ? ` · #${row.rank}` : ""}</small>
-        ${mine ? `<span class="tag tag-accent">Tu voto</span>` : ""}
-        <div class="cand-voters">
-          ${row?.voters.length ? row.voters.map((v) => voterChip(voterName(v), "sm")).join("") : `<span class="muted small">Sin votos aún</span>`}
-        </div>
-      </aside>
+      ${mine ? `<aside class="profile-score"><span class="ribbon static">✓ Tu voto</span></aside>` : ""}
     </section>
 
     <div class="profile-body">
       <div class="profile-main">
         ${c.bio ? `<section class="panel"><h2 class="h3">Sobre ${esc(c.name.split(" ")[0])}</h2><p class="prose">${esc(c.bio)}</p></section>` : ""}
-        ${c.motivation ? `<section class="panel"><h2 class="h3">¿Por qué quiere ser Group Growth?</h2><p class="prose">${esc(c.motivation)}</p></section>` : ""}
+        ${c.motivation ? `<section class="panel"><h2 class="h3">¿Por qué quiere entrar al Core Team?</h2><p class="prose">${esc(c.motivation)}</p></section>` : ""}
 
         <section class="panel">
           <div class="panel-head">

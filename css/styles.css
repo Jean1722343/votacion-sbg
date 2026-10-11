@@ -1,5 +1,5 @@
 /* =========================================================
-   Votación Group Growth · AWS Student Builder Group
+   Votación Core Team · AWS Student Builder Group
    Paleta oficial SBG (Leader Library) · Space Grotesk + Inter
    ========================================================= */
 
@@ -559,4 +559,93 @@ legend { font: 600 0.75rem var(--font-mono); color: var(--orange); padding: 0 0.
 @media (max-width: 720px) {
   .guide-steps { grid-template-columns: 1fr; }
   .me-name { display: none; }
+}
+
+/* ---------- Estado de mi boleta (inicio) ---------- */
+.ballot-status {
+  display: grid; gap: 0.7rem; justify-items: start; min-width: min(100%, 280px);
+  background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 1.1rem 1.25rem; box-shadow: var(--shadow);
+}
+.ballot-status.is-done { border-color: color-mix(in srgb, var(--mint) 55%, var(--line)); }
+.bs-label { margin: 0; color: var(--text); font: 600 1rem var(--font-display); }
+.is-done .bs-label { color: var(--mint); }
+.bs-slots { display: flex; gap: 0.5rem; }
+.bs-slots i { width: 44px; height: 44px; border-radius: 10px; border: 2px dashed var(--grid); }
+.bs-picks { display: grid; gap: 0.4rem; }
+.bs-pick { display: flex; align-items: center; gap: 0.6rem; color: var(--text); font-weight: 600; }
+
+/* ---------- Tarjetas de candidato ---------- */
+.cand-card { padding-bottom: 1rem; }
+.cand-card::after {
+  content: ""; position: absolute; inset: 0 0 auto; height: 90px; pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent);
+}
+.cand-card > * { position: relative; z-index: 1; }
+.cand-index { font: 600 0.8rem var(--font-mono); color: var(--grid); margin-right: 2.6rem; }
+.cand-cta { margin-top: 0.9rem; font: 600 0.85rem var(--font-body); color: var(--accent); display: inline-flex; gap: 0.3rem; }
+.cand-cta span { transition: transform 0.2s var(--ease); }
+.cand-card:hover .cand-cta span { transform: translateX(4px); }
+.cand-foot { padding-top: 0.9rem; }
+.ribbon {
+  position: absolute; top: 0.9rem; left: 50%; transform: translateX(-50%); z-index: 2;
+  font: 700 0.68rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em;
+  background: var(--orange); color: var(--squid); padding: 0.2rem 0.6rem; border-radius: 999px;
+}
+.ribbon.static { position: static; transform: none; font-size: 0.75rem; padding: 0.35rem 0.8rem; }
+.cand-card.is-mine { box-shadow: 0 0 0 1px var(--orange), var(--shadow); }
+
+/* ---------- Comprobante de voto ---------- */
+.receipt {
+  max-width: 640px; margin: 2rem auto; text-align: center; display: grid; justify-items: center; gap: 0.4rem;
+  background: var(--surface); border: 1px solid color-mix(in srgb, var(--mint) 45%, var(--line));
+  border-radius: calc(var(--radius) + 4px); padding: clamp(1.5rem, 5vw, 2.5rem); box-shadow: var(--shadow);
+}
+.receipt .lead { margin: 0.4rem auto 1rem; }
+.receipt-check {
+  width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; margin-bottom: 0.6rem;
+  background: var(--mint); color: var(--squid); font: 700 2rem var(--font-display);
+  animation: pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes pop { from { transform: scale(0.4) rotate(-12deg); opacity: 0; } }
+.receipt-picks { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; margin: 0.5rem 0 1rem; }
+.receipt-pick {
+  display: grid; justify-items: center; gap: 0.5rem; padding: 1.1rem; border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 9%, var(--squid)); color: var(--text); text-decoration: none !important;
+  transition: transform 0.2s var(--ease);
+}
+.receipt-pick:hover { transform: translateY(-2px); }
+.receipt-pick small { font: 600 0.7rem var(--font-mono); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+.receipt-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 0.8rem; }
+.link-btn.danger { color: var(--danger); font-size: 0.85rem; }
+
+/* ---------- Botón exclusivo de resultados (admin) ---------- */
+.admin-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.9rem; border-radius: 999px;
+  font: 600 0.88rem var(--font-body); color: var(--text); text-decoration: none !important; white-space: nowrap;
+  background:
+    linear-gradient(var(--squid), var(--squid)) padding-box,
+    linear-gradient(100deg, var(--orange), var(--magenta), var(--purple)) border-box;
+  border: 1.5px solid transparent; transition: transform 0.15s var(--ease), box-shadow 0.2s;
+}
+.admin-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px -8px var(--magenta); }
+.admin-btn.is-active {
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--orange) 25%, var(--squid)), color-mix(in srgb, var(--magenta) 25%, var(--squid))) padding-box,
+    linear-gradient(100deg, var(--orange), var(--magenta), var(--purple)) border-box;
+}
+.private-tag {
+  display: inline-block; margin-left: 0.5rem; font: 600 0.7rem var(--font-mono); color: var(--magenta);
+  border: 1px solid color-mix(in srgb, var(--magenta) 45%, transparent); background: color-mix(in srgb, var(--magenta) 8%, transparent);
+  padding: 0.1rem 0.5rem; border-radius: 999px;
+}
+
+@media (max-width: 720px) {
+  .admin-label { display: none; }
+  .admin-btn { padding: 0.45rem 0.6rem; }
+  .ballot-status { width: 100%; }
+}
+@media (max-width: 480px) {
+  .receipt-picks { grid-template-columns: 1fr; }
 }

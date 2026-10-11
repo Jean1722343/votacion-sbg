@@ -43,7 +43,7 @@ export function render(root) {
   root.innerHTML = `
     <section class="hero hero-compact">
       <div>
-        <p class="kicker">&gt;_ Resultados en vivo</p>
+        <p class="kicker">&gt;_ Resultados en vivo <span class="private-tag">🔒 Solo visible para ti</span></p>
         <h1 class="display sm">${finished ? "Votación completa" : "Así va la votación"}</h1>
         <p class="lead">${state.config.votingOpen ? "Se actualiza en tiempo real conforme el equipo vota." : "La votación está cerrada. Estos son los resultados finales."}</p>
       </div>
@@ -124,7 +124,7 @@ export function render(root) {
               const picks = voteOf.get(v.id);
               const vote = r.validVotes.find((x) => x.id === v.id);
               return `<tr>
-                <th scope="row" class="sticky">${voterChip(v.name)}${v.role === "profesor" ? ' <span class="tag tag-sm">Profesor</span>' : ""}</th>
+                <th scope="row" class="sticky">${voterChip(v.name)}${v.role === "asesor" ? ` <span class="tag tag-sm">${esc(v.roleLabel)}</span>` : ""}</th>
                 ${state.candidates.map((c) => `<td>${picks?.has(c.id) ? `<span class="mx-cell" style="--accent:${color(c)}" aria-label="Votó">✓</span>` : `<span class="mx-empty" aria-label="No">·</span>`}</td>`).join("")}
                 <td>${vote ? `<span class="tag tag-mint tag-sm">Votó</span><small class="muted block">${esc(formatDateTime(vote.updatedAt))}</small>` : `<span class="tag tag-sm">Pendiente</span>`}</td>
               </tr>`;
@@ -177,7 +177,7 @@ function exportCsv(r) {
   const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `votacion-group-growth-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `votacion-core-team-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 }

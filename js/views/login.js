@@ -17,8 +17,8 @@ export function render(root) {
     <section class="login">
       <div class="login-hero">
         <p class="kicker">&gt;_ AWS Student Builder Group</p>
-        <h1 class="display">Elegimos a <span class="grad">Group Growth</span></h1>
-        <p class="lead">Cada integrante del equipo y el profesor asesor tienen <b>${VOTES_PER_VOTER} votos</b> para repartir entre candidatos distintos. Los dos con más votos ocupan el 1.º y 2.º lugar.</p>
+        <h1 class="display">Elegimos al <span class="grad">Core Team</span></h1>
+        <p class="lead">Cada integrante del equipo y la tutora tienen <b>${VOTES_PER_VOTER} votos</b> para repartir entre candidatos distintos. Los dos con más votos ocupan el 1.º y 2.º lugar.</p>
         <ol class="login-steps">
           <li><span>01</span><div><b>Toca tu nombre</b><small>La primera vez creas tu contraseña.</small></div></li>
           <li><span>02</span><div><b>Revisa a los candidatos</b><small>Perfiles, redes y entrevistas con audio y transcripción.</small></div></li>
@@ -47,7 +47,7 @@ function nameStep() {
         return `
         <button type="button" class="voter-option" data-id="${esc(v.id)}" role="listitem">
           <span class="voter-dot lg">${esc(initials(v.name))}</span>
-          <span class="voter-text"><b>${esc(v.name)}</b><small>${v.role === "profesor" ? "Profesor asesor" : "Equipo"}</small></span>
+          <span class="voter-text"><b>${esc(v.name)}</b><small>${esc(v.roleLabel)}</small></span>
           <span class="tag tag-sm ${claimed ? "" : "tag-accent"}">${claimed ? "🔒 Con contraseña" : "✨ Primera vez"}</span>
           <span class="chev" aria-hidden="true">›</span>
         </button>`;

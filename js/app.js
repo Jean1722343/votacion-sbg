@@ -1,4 +1,4 @@
-import { state, start, subscribe, me, myVote, signOut, changePassword } from "./store.js";
+import { state, start, subscribe, me, myVote, isAdmin, signOut, changePassword } from "./store.js";
 import { MIN_PASSWORD } from "./firebase-config.js";
 import { esc, initials, toast, friendlyError } from "./ui.js";
 import * as loginView from "./views/login.js";
@@ -14,7 +14,7 @@ const ROUTES = [
   { pattern: /^$/, view: candidatosView, nav: "" },
   { pattern: /^c\/([\w-]+)$/, view: perfilView, nav: "" },
   { pattern: /^votar$/, view: votarView, nav: "votar" },
-  { pattern: /^resultados$/, view: resultadosView, nav: "resultados" },
+  { pattern: /^resultados$/, view: resultadosView, nav: "resultados", admin: true },
 ];
 
 let current = null;
@@ -43,13 +43,13 @@ function renderTopbar(navKey) {
     <div class="topbar-inner">
       <a href="#/" class="brand" aria-label="Inicio">
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="brand-text"><b>Student Builder Group</b><small>Group Growth · Votación</small></span>
+        <span class="brand-text"><b>Student Builder Group</b><small>Core Team · Votación</small></span>
       </a>
       <nav class="nav" aria-label="Principal">
         ${link("", "Candidatos")}
         ${link("votar", "Votar", voted ? ' <span class="nav-badge ok">✓</span>' : open ? ' <span class="nav-badge">2</span>' : "")}
-        ${link("resultados", "Resultados")}
       </nav>
+      ${isAdmin() ? `<a href="#/resultados" class="admin-btn ${navKey === "resultados" ? "is-active" : ""}" title="Solo tú puedes ver esto"><span aria-hidden="true">🔒</span><span class="admin-label">Resultados</span></a>` : ""}
       <div class="me">
         <span class="status-pill ${open ? "is-open" : "is-closed"}" title="Estado de la votación">${open ? "Abierta" : "Cerrada"}</span>
         <div class="menu">
@@ -59,7 +59,7 @@ function renderTopbar(navKey) {
             <span aria-hidden="true">▾</span>
           </button>
           <div class="menu-list" role="menu" hidden>
-            <p class="menu-head"><b>${esc(voter.name)}</b><small>${voter.role === "profesor" ? "Profesor asesor" : "Equipo"}</small></p>
+            <p class="menu-head"><b>${esc(voter.name)}</b><small>${esc(voter.roleLabel)}</small></p>
             <button role="menuitem" data-act="password">🔑 Cambiar contraseña</button>
             <button role="menuitem" data-act="logout">↩ Salir</button>
           </div>
@@ -130,6 +130,10 @@ function render(reason = "nav") {
     return;
   }
   const { route, params } = parseHash();
+  if (route.admin && !isAdmin()) {
+    location.replace("#/");
+    return;
+  }
   renderTopbar(route.nav);
   if (state.error) {
     current = null;

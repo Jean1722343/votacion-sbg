@@ -1,9 +1,11 @@
 import { state, me, myVote, viewedProfiles } from "../store.js";
 import { db, doc, setDoc, deleteDoc, serverTimestamp } from "../firebase.js";
 import { VOTES_PER_VOTER } from "../firebase-config.js";
-import { esc, avatar, accentOf, toast, confirmDialog, friendlyError } from "../ui.js";
+import { esc, avatar, accentOf, toast, confirmDialog, friendlyError, formatDateTime } from "../ui.js";
 
 let picks = [];
+// Con voto ya registrado se muestra el comprobante; "editing" abre la boleta para cambiarlo.
+let editing = false;
 
 // La selección vive en `picks`, así que re-renderizar con datos nuevos no la pierde.
 export function shouldUpdate() {
@@ -16,7 +18,10 @@ export function render(root, { fresh }) {
     return;
   }
   const existing = myVote();
-  if (fresh) picks = [...(existing?.picks || [])];
+  if (fresh) {
+    picks = [...(existing?.picks || [])];
+    editing = false;
+  }
   picks = picks.filter((id) => state.candidates.some((c) => c.id === id));
   const voter = me();
   const open = state.config.votingOpen;
@@ -28,12 +33,14 @@ export function render(root, { fresh }) {
 
   const byId = new Map(state.candidates.map((c, i) => [c.id, { c, i }]));
 
+  if (existing && !editing) return renderReceipt(root, existing, byId, open);
+
   root.innerHTML = `
     <section class="hero hero-compact">
       <div>
         <p class="kicker">&gt;_ Tu boleta · ${esc(voter.name)}</p>
         <h1 class="display sm">Elige a <span class="grad">${VOTES_PER_VOTER} personas distintas</span></h1>
-        <p class="lead">Cada voto vale 1 punto. No puedes dar tus dos votos a la misma persona.${existing ? " Ya votaste: puedes cambiar tu voto mientras la votación esté abierta." : ""}</p>
+        <p class="lead">Toca a dos candidatos. Cada voto vale 1 punto y no puedes dárselos a la misma persona. Tu voto es secreto: nadie del equipo verá por quién votaste.</p>
       </div>
     </section>
 
@@ -65,7 +72,7 @@ export function render(root, { fresh }) {
       </div>
       <div class="ballot-actions">
         <span class="ballot-count"><b>${picks.length}</b> de ${VOTES_PER_VOTER}</span>
-        ${open && existing ? `<button class="btn btn-ghost btn-sm" id="withdraw">Retirar voto</button>` : ""}
+        ${existing ? `<button class="btn btn-ghost btn-sm" id="cancel-edit">Cancelar</button>` : ""}
         ${open ? `<button class="btn btn-primary" id="submit" ${picks.length === VOTES_PER_VOTER ? "" : "disabled"}>${existing ? "Actualizar voto" : "Enviar voto"}</button>` : ""}
       </div>
     </div>
@@ -93,7 +100,7 @@ export function render(root, { fresh }) {
     const names = picks.map((id) => byId.get(id).c.name);
     const ok = await confirmDialog({
       title: existing ? "¿Actualizar tu voto?" : "¿Confirmas tu voto?",
-      body: `${unseenNote()}<p>Vas a votar por:</p><ol class="confirm-list">${names.map((n) => `<li>${esc(n)}</li>`).join("")}</ol><p class="muted small">Tu nombre aparecerá junto a cada candidato que votaste.</p>`,
+      body: `${unseenNote()}<p>Vas a votar por:</p><ol class="confirm-list">${names.map((n) => `<li>${esc(n)}</li>`).join("")}</ol><p class="muted small">Tu voto es secreto. Podrás cambiarlo mientras la votación siga abierta.</p>`,
       confirm: existing ? "Actualizar" : "Votar",
     });
     if (!ok) return;
@@ -104,11 +111,49 @@ export function render(root, { fresh }) {
         createdAt: existing?.createdAt || serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      editing = false;
       toast(existing ? "Voto actualizado" : "¡Voto registrado!");
-      location.hash = "#/resultados";
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       toast(friendlyError(err), "error");
     }
+  });
+
+  root.querySelector("#cancel-edit")?.addEventListener("click", () => {
+    editing = false;
+    picks = [...(existing?.picks || [])];
+    render(root, { fresh: false });
+  });
+}
+
+function renderReceipt(root, vote, byId, open) {
+  const chosen = (vote.picks || []).map((id) => byId.get(id)).filter(Boolean);
+  root.innerHTML = `
+    <section class="receipt">
+      <div class="receipt-check" aria-hidden="true">✓</div>
+      <p class="kicker">&gt;_ Comprobante de voto</p>
+      <h1 class="display sm">¡Tu voto quedó registrado!</h1>
+      <p class="lead">Gracias, ${esc(me().name.split(" ")[0])}. Tu voto es secreto: solo cuenta para el resultado final.</p>
+      <div class="receipt-picks">
+        ${chosen.map(({ c, i }, n) => `
+          <a class="receipt-pick" href="#/c/${esc(c.id)}" style="--accent:${accentOf(c, i)}">
+            <small>Voto ${n + 1}</small>
+            ${avatar(c, "lg", i)}
+            <b>${esc(c.name)}</b>
+          </a>`).join("")}
+      </div>
+      <p class="muted small">Registrado: ${esc(formatDateTime(vote.updatedAt) || "ahora")}</p>
+      <div class="receipt-actions">
+        <a class="btn btn-ghost" href="#/">Volver a candidatos</a>
+        ${open ? `<button class="btn btn-primary" id="edit-vote">Cambiar mi voto</button>` : `<span class="status-pill is-closed">Votación cerrada</span>`}
+        ${open ? `<button class="link-btn danger" id="withdraw">Retirar mi voto</button>` : ""}
+      </div>
+    </section>`;
+
+  root.querySelector("#edit-vote")?.addEventListener("click", () => {
+    editing = true;
+    picks = [...(vote.picks || [])];
+    render(root, { fresh: false });
   });
 
   root.querySelector("#withdraw")?.addEventListener("click", async () => {
@@ -122,8 +167,8 @@ export function render(root, { fresh }) {
     try {
       await deleteDoc(doc(db, "votes", state.voterId));
       picks = [];
+      editing = false;
       toast("Voto retirado");
-      render(root, { fresh: false });
     } catch (err) {
       toast(friendlyError(err), "error");
     }

@@ -1,9 +1,10 @@
 rules_version = '2';
 
-// Votación Group Growth · AWS Student Builder Group
+// Votación Core Team · AWS Student Builder Group
 // Cada votante crea su propia contraseña la primera vez (cuenta <id>@sbg-vota.app).
 // - voters/{id}: marca pública de "ya creó contraseña"; solo la puede crear el dueño.
-// - votes/{id}: solo el dueño escribe su voto (2 candidatos distintos); lo leen los votantes con sesión.
+// - votes/{id}: solo el dueño escribe y lee su voto (2 candidatos distintos).
+//   Solo el admin (jean) lee todos los votos: los resultados son privados.
 // Candidatos, lista de votantes y apertura de la votación viven en /data del repo.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -35,7 +36,7 @@ service cloud.firestore {
     }
 
     match /votes/{id} {
-      allow read: if request.auth != null;
+      allow read: if isOwner(id) || isOwner('jean');
       allow create, update: if isOwner(id) && validVote();
       allow delete: if isOwner(id);
     }

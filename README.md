@@ -1,12 +1,12 @@
-# Votación · Group Growth — AWS Student Builder Group
+# Votación · Core Team — AWS Student Builder Group
 
-Web para que el equipo (4 integrantes + profesor asesor) elija a quién se queda en **Group Growth**.
+Web para que el equipo (Jean, Joan, Jeovani, Gerónimo y la tutora) elija a quién entra al **Core Team** del AWS Student Builder Group.
 
 Sitio: https://jean1722343.github.io/votacion-sbg/
 
 - **Acceso:** cada quien toca su nombre. La primera vez crea su propia contraseña; después solo esa persona puede entrar y votar con ese nombre.
 - **Regla:** cada votante tiene **2 votos** y debe dárselos a **2 candidatos distintos**. Los dos con más votos quedan en 1.º y 2.º lugar.
-- **Transparencia:** cada candidato muestra quién votó por él.
+- **Voto secreto:** nadie ve conteos ni quién votó por quién, excepto Jean (`admin` en `data/config.js`), que tiene un botón exclusivo de Resultados. Firebase lo exige en el servidor.
 - **Expediente:** perfil, redes y entrevistas (virtuales o presenciales) con audio/video y transcripción con buscador.
 - **Analítica en vivo:** participación, ranking, podio con empates, matriz votante × candidato, duplas más elegidas, actividad y CSV.
 
@@ -48,7 +48,7 @@ Formato de transcripción (una línea por intervención):
 `firestore.rules` garantiza en el servidor que:
 
 - solo el dueño de cada nombre escribe su voto, con exactamente 2 candidatos distintos;
-- solo votantes con sesión pueden leer los votos;
+- cada votante solo puede leer su propio voto; solo `jean` lee todos (resultados privados);
 - solo el dueño marca su nombre como "con contraseña";
 - todo lo demás está bloqueado.
 

@@ -3,7 +3,7 @@ import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as fbSignOut,
   updatePassword, reauthenticateWithCredential, EmailAuthProvider,
 } from "./firebase.js";
-import { votacionAbierta, votantes } from "../data/config.js";
+import { votacionAbierta, votantes, admin } from "../data/config.js";
 import { candidatos } from "../data/candidatos.js";
 import { VOTES_PER_VOTER, EMAIL_DOMAIN } from "./firebase-config.js";
 
@@ -45,7 +45,15 @@ export const state = {
   user: null,
   authReady: false,
   voterId: null,
-  voters: votantes.map((v) => ({ id: String(v.id), name: v.nombre, role: v.rol === "profesor" ? "profesor" : "equipo" })),
+  voters: votantes.map((v) => {
+    const advisor = v.rol === "tutora" || v.rol === "profesor";
+    return {
+      id: String(v.id),
+      name: v.nombre,
+      role: advisor ? "asesor" : "equipo",
+      roleLabel: v.rol === "tutora" ? "Tutora asesora" : v.rol === "profesor" ? "Profesor asesor" : "Equipo",
+    };
+  }),
   // Votantes que ya crearon su contraseña (colección pública "voters", solo marca de tiempo).
   claimed: new Set(),
   claimedReady: false,
@@ -145,14 +153,22 @@ async function loadTranscriptFiles() {
 
 let stopVotes = null;
 
+// El admin escucha todos los votos; cada votante solo el suyo (las reglas lo exigen).
 function watchVotes() {
   stopVotes?.();
   state.votesReady = false;
-  stopVotes = onSnapshot(collection(db, "votes"), (snap) => {
-    state.votes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const onData = (docs) => {
+    state.votes = docs;
     state.votesReady = true;
     state.error = null;
     emit("votes");
+  };
+  const target = isAdmin()
+    ? collection(db, "votes")
+    : doc(db, "votes", state.voterId);
+  stopVotes = onSnapshot(target, (snap) => {
+    if (snap.docs) onData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    else onData(snap.exists() ? [{ id: snap.id, ...snap.data() }] : []);
   }, (err) => {
     state.votesReady = true;
     state.error = `No se pudieron cargar los votos: ${err.message}`;
@@ -194,6 +210,10 @@ export function start() {
 }
 
 // ---------- Derivados ----------
+
+export function isAdmin() {
+  return Boolean(state.voterId) && state.voterId === admin;
+}
 
 export function me() {
   return state.voters.find((v) => v.id === state.voterId) || null;
