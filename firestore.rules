@@ -1,61 +1,35 @@
 rules_version = '2';
 
 // Votación Group Growth · AWS Student Builder Group
-// - Votantes: lista pública (solo nombres) para el selector de inicio de sesión.
-// - Todo lo demás solo lo ve un votante registrado o el admin.
-// - Cada votante tiene un único documento de voto: exactamente 2 candidatos distintos que existan.
+// Acceso solo con el nombre (sin cuentas). Firestore guarda únicamente los votos:
+// - cualquiera puede leerlos (los resultados son públicos para el equipo);
+// - cada voto es un documento votes/{idVotante} con exactamente 2 candidatos distintos;
+// - candidatos, votantes y apertura de la votación viven en /data del repo.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() { return request.auth != null && request.auth.token.email != null; }
-    function email() { return request.auth.token.email; }
-    function voterPath(id) { return /databases/$(database)/documents/voters/$(id); }
-    function isVoter() { return signedIn() && exists(voterPath(email())); }
-    function isAdmin() {
-      return signedIn() && (
-        email() == 'jean@sbg-vota.app' ||
-        (exists(voterPath(email())) && get(voterPath(email())).data.isAdmin == true)
-      );
-    }
-    function canRead() { return isVoter() || isAdmin(); }
-    function votingOpen() {
-      return get(/databases/$(database)/documents/config/app).data.votingOpen == true;
-    }
-    function candidateExists(id) {
-      return exists(/databases/$(database)/documents/candidates/$(id));
-    }
-    function validVote() {
+    function validVote(id) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['voterName', 'picks', 'createdAt', 'updatedAt'])
+      return id.matches('^[a-z0-9-]{1,40}$')
+        && d.keys().hasOnly(['voterName', 'picks', 'createdAt', 'updatedAt'])
+        && d.voterName is string && d.voterName.size() <= 80
         && d.picks is list
         && d.picks.size() == 2
         && d.picks[0] is string && d.picks[1] is string
+        && d.picks[0].matches('^[A-Za-z0-9_-]{1,40}$')
+        && d.picks[1].matches('^[A-Za-z0-9_-]{1,40}$')
         && d.picks[0] != d.picks[1]
-        && candidateExists(d.picks[0])
-        && candidateExists(d.picks[1])
-        && d.voterName == get(voterPath(email())).data.name
         && d.updatedAt == request.time;
     }
 
-    match /voters/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /config/{id} {
-      allow read: if canRead();
-      allow write: if isAdmin();
-    }
-
-    match /candidates/{id} {
-      allow read: if canRead();
-      allow write: if isAdmin();
-    }
-
     match /votes/{id} {
-      allow read: if canRead();
-      allow create, update: if isVoter() && id == email() && votingOpen() && validVote();
-      allow delete: if isAdmin() || (isVoter() && id == email() && votingOpen());
+      allow read: if true;
+      allow create, update: if validVote(id);
+      allow delete: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

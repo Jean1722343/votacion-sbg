@@ -497,3 +497,4 @@ legend { font: 600 0.75rem var(--font-mono); color: var(--orange); padding: 0 0.
 }
 .first-run { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--line); }
 .first-run .btn { margin-top: 0.6rem; }
+.voter-option .tag { margin-left: auto; }

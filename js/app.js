@@ -1,13 +1,10 @@
-import { state, start, subscribe, me, isAdmin, myVote } from "./store.js";
-import { auth, signOut } from "./firebase.js";
+import { state, start, subscribe, me, myVote, signOut } from "./store.js";
 import { esc, initials } from "./ui.js";
 import * as loginView from "./views/login.js";
-import * as setupView from "./views/setup.js";
 import * as candidatosView from "./views/candidatos.js";
 import * as perfilView from "./views/perfil.js";
 import * as votarView from "./views/votar.js";
 import * as resultadosView from "./views/resultados.js";
-import * as adminView from "./views/admin.js";
 
 const root = document.getElementById("app");
 const topbar = document.getElementById("topbar");
@@ -17,7 +14,6 @@ const ROUTES = [
   { pattern: /^c\/([\w-]+)$/, view: perfilView, nav: "" },
   { pattern: /^votar$/, view: votarView, nav: "votar" },
   { pattern: /^resultados$/, view: resultadosView, nav: "resultados" },
-  { pattern: /^admin$/, view: adminView, nav: "admin", admin: true },
 ];
 
 let current = null;
@@ -26,18 +22,17 @@ function parseHash() {
   const path = location.hash.replace(/^#\/?/, "").replace(/\/$/, "");
   for (const route of ROUTES) {
     const m = path.match(route.pattern);
-    if (m) return { route, params: m.slice(1), path };
+    if (m) return { route, params: m.slice(1) };
   }
-  return { route: ROUTES[0], params: [], path: "" };
+  return { route: ROUTES[0], params: [] };
 }
 
 function renderTopbar(navKey) {
-  if (!state.user) {
+  const voter = me();
+  if (!voter) {
     topbar.hidden = true;
     return;
   }
-  const voter = me();
-  const name = voter?.name || state.user.email.split("@")[0];
   const voted = Boolean(myVote());
   const open = state.config.votingOpen;
   const link = (key, label, extra = "") =>
@@ -53,47 +48,28 @@ function renderTopbar(navKey) {
         ${link("", "Candidatos")}
         ${link("votar", "Votar", voted ? ' <span class="nav-badge ok">✓</span>' : open ? ' <span class="nav-badge">2</span>' : "")}
         ${link("resultados", "Resultados")}
-        ${isAdmin() ? link("admin", "Admin") : ""}
       </nav>
       <div class="me">
         <span class="status-pill ${open ? "is-open" : "is-closed"}" title="Estado de la votación">${open ? "Abierta" : "Cerrada"}</span>
-        <span class="me-avatar" title="${esc(name)}">${esc(initials(name))}</span>
+        <span class="me-avatar" title="${esc(voter.name)}">${esc(initials(voter.name))}</span>
         <button class="btn btn-ghost btn-sm" id="logout">Salir</button>
       </div>
     </div>`;
-  topbar.querySelector("#logout").addEventListener("click", () => signOut(auth));
+  topbar.querySelector("#logout").addEventListener("click", signOut);
 }
 
 function render(reason = "nav") {
-  if (!state.configured) {
-    topbar.hidden = true;
-    return mount(setupView, [], reason);
-  }
-  if (!state.authReady || !state.votersReady) return;
-  if (!state.user) {
+  if (!me()) {
     renderTopbar();
-    return mount(loginView, [], reason);
+    current = null;
+    loginView.render(root);
+    return;
   }
-
   const { route, params } = parseHash();
-  if (route.admin && !isAdmin()) {
-    location.hash = "#/";
-    return;
-  }
   renderTopbar(route.nav);
-
-  if (!me() && !isAdmin()) {
-    current = null;
-    root.innerHTML = `
-      <section class="panel center narrow">
-        <h1 class="h2">Cuenta sin registrar</h1>
-        <p class="muted">${esc(state.user.email)} no está en la lista de votantes. Pide al admin que te dé de alta.</p>
-      </section>`;
-    return;
-  }
   if (state.error) {
-    root.innerHTML = `<section class="panel center narrow"><h1 class="h2">Ups</h1><p class="muted">${esc(state.error)}</p></section>`;
     current = null;
+    root.innerHTML = `<section class="panel center narrow"><h1 class="h2">Ups</h1><p class="muted">${esc(state.error)}</p></section>`;
     return;
   }
   mount(route.view, params, reason);

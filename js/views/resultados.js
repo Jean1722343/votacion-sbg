@@ -9,7 +9,7 @@ export function shouldUpdate() {
 const pct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
 
 export function render(root) {
-  if (!state.candidatesReady) {
+  if (!state.votesReady) {
     root.innerHTML = `<div class="boot"><p>Cargando resultados…</p></div>`;
     return;
   }

@@ -37,6 +37,8 @@ export function safeUrl(url) {
   const u = String(url || "").trim();
   if (!u) return "";
   if (/^https?:\/\//i.test(u)) return u;
+  // Archivos del propio repo (carpetas media/ y transcripciones/).
+  if (/^(\.\/)?(media|transcripciones)\/[^\s]+$/i.test(u)) return u;
   if (/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(u)) return `https://${u}`;
   return "";
 }

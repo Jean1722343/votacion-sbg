@@ -12,7 +12,7 @@ export function shouldUpdate(reason) {
 }
 
 export function render(root, { params, fresh }) {
-  if (!state.candidatesReady) {
+  if (!state.votesReady) {
     root.innerHTML = `<div class="boot"><p>Cargando…</p></div>`;
     return;
   }
@@ -81,7 +81,7 @@ export function render(root, { params, fresh }) {
             <span class="tag">${interviews.length}</span>
           </div>
           ${interviews.length ? `<ol class="timeline">${interviews.map((iv) => interviewHtml(iv)).join("")}</ol>`
-            : `<p class="muted">Todavía no hay entrevistas registradas. Después de cada reunión, súbelas desde Admin con su audio y transcripción.</p>`}
+            : `<p class="muted">Todavía no hay entrevistas registradas. Se agregan después de cada reunión.</p>`}
         </section>
       </div>
 

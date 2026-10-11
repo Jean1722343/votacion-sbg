@@ -1,4 +1,4 @@
-import { state, results, myVote, isAdmin, voterName } from "../store.js";
+import { state, results, myVote, voterName } from "../store.js";
 import { VOTES_PER_VOTER } from "../firebase-config.js";
 import { esc, avatar, accentOf, socialLinks, voterChip } from "../ui.js";
 
@@ -7,7 +7,7 @@ export function shouldUpdate() {
 }
 
 export function render(root) {
-  if (!state.candidatesReady) {
+  if (!state.votesReady) {
     root.innerHTML = `<div class="boot"><p>Cargando candidatos…</p></div>`;
     return;
   }
@@ -65,7 +65,7 @@ export function render(root) {
     </section>` : `
     <section class="panel center narrow">
       <h2 class="h3">Aún no hay candidatos</h2>
-      <p class="muted">${isAdmin() ? `Ve a <a href="#/admin">Admin</a> y carga la plantilla de 6 candidatos.` : "El admin todavía no ha cargado a los candidatos."}</p>
+      <p class="muted">Agrega candidatos en <code>data/candidatos.js</code>.</p>
     </section>`}
   `;
 

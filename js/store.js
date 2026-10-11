@@ -1,18 +1,51 @@
-import {
-  configured, auth, db, onAuthStateChanged, collection, doc, onSnapshot,
-} from "./firebase.js";
-import { ADMIN_EMAIL, VOTES_PER_VOTER } from "./firebase-config.js";
+import { db, collection, onSnapshot } from "./firebase.js";
+import { votacionAbierta, votantes } from "../data/config.js";
+import { candidatos } from "../data/candidatos.js";
+import { VOTES_PER_VOTER } from "./firebase-config.js";
+
+const SESSION_KEY = "votacion-sbg:votante";
+
+// Normaliza los archivos de /data (en español) al modelo que usan las vistas.
+function toCandidate(c, i) {
+  return {
+    id: String(c.id),
+    order: i,
+    name: c.nombre || `Candidato ${i + 1}`,
+    color: c.color || "",
+    career: c.carrera || "",
+    semester: c.semestre || "",
+    campus: c.campus || "",
+    email: c.correo || "",
+    phone: c.telefono || "",
+    photoUrl: c.foto || "",
+    bio: c.bio || "",
+    motivation: c.motivacion || "",
+    strengths: c.fortalezas || [],
+    notes: c.notas || "",
+    socials: c.redes || {},
+    links: (c.enlaces || []).map((l) => ({ label: l.etiqueta || "", url: l.url || "" })),
+    interviews: (c.entrevistas || []).map((e) => ({
+      title: e.titulo || "",
+      date: e.fecha || "",
+      mode: e.modalidad === "presencial" ? "presencial" : "virtual",
+      duration: e.duracion || "",
+      interviewers: e.entrevistadores || "",
+      audioUrl: e.audio || "",
+      videoUrl: e.video || "",
+      notes: e.notas || "",
+      transcript: e.transcripcion || "",
+      transcriptFile: e.archivoTranscripcion || "",
+    })),
+  };
+}
 
 export const state = {
-  configured,
-  authReady: false,
-  user: null,
-  voters: [],
-  votersReady: false,
-  candidates: [],
-  candidatesReady: false,
+  voterId: null,
+  voters: votantes.map((v) => ({ id: String(v.id), name: v.nombre, role: v.rol === "profesor" ? "profesor" : "equipo" })),
+  candidates: candidatos.map(toCandidate),
   votes: [],
-  config: { votingOpen: false },
+  votesReady: false,
+  config: { votingOpen: votacionAbierta },
   error: null,
 };
 
@@ -25,97 +58,89 @@ function emit(reason) {
   for (const fn of listeners) fn(reason);
 }
 
-let privateUnsubs = [];
+// ---------- Sesión: solo el nombre, guardado en este navegador ----------
 
-function watchPrivate() {
-  stopPrivate();
-  const fail = (err) => {
-    state.error = err.code === "permission-denied"
-      ? "Tu cuenta no está registrada como votante. Pide al admin que te dé de alta."
-      : err.message;
-    emit("error");
-  };
-  privateUnsubs = [
-    onSnapshot(collection(db, "candidates"), (snap) => {
-      state.candidates = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || a.name.localeCompare(b.name));
-      state.candidatesReady = true;
-      state.error = null;
-      emit("candidates");
-    }, fail),
-    onSnapshot(collection(db, "votes"), (snap) => {
-      state.votes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      emit("votes");
-    }, fail),
-    onSnapshot(doc(db, "config", "app"), (snap) => {
-      state.config = snap.exists() ? snap.data() : { votingOpen: false, missing: true };
-      emit("config");
-    }, fail),
-  ];
+function readSession() {
+  try {
+    return localStorage.getItem(SESSION_KEY);
+  } catch {
+    return null;
+  }
 }
 
-function stopPrivate() {
-  privateUnsubs.forEach((u) => u());
-  privateUnsubs = [];
-  state.candidates = [];
-  state.candidatesReady = false;
-  state.votes = [];
-  state.config = { votingOpen: false };
+export function signIn(id) {
+  state.voterId = id;
+  try {
+    localStorage.setItem(SESSION_KEY, id);
+  } catch {}
+  emit("auth");
+}
+
+export function signOut() {
+  state.voterId = null;
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {}
+  emit("auth");
+}
+
+// Carga las transcripciones que están en archivos .txt aparte.
+async function loadTranscriptFiles() {
+  const jobs = [];
+  for (const c of state.candidates) {
+    for (const iv of c.interviews) {
+      if (!iv.transcript && iv.transcriptFile) {
+        jobs.push(
+          fetch(iv.transcriptFile, { cache: "no-cache" })
+            .then((r) => (r.ok ? r.text() : ""))
+            .then((text) => (iv.transcript = text.trim()))
+            .catch(() => {}),
+        );
+      }
+    }
+  }
+  if (jobs.length) {
+    await Promise.all(jobs);
+    emit("candidates");
+  }
 }
 
 export function start() {
-  if (!configured) {
-    state.authReady = true;
-    emit("init");
-    return;
-  }
-  onSnapshot(collection(db, "voters"), (snap) => {
-    state.voters = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.role === "profesor") - (b.role === "profesor") || a.name.localeCompare(b.name));
-    state.votersReady = true;
-    emit("voters");
+  const saved = readSession();
+  if (saved && state.voters.some((v) => v.id === saved)) state.voterId = saved;
+
+  onSnapshot(collection(db, "votes"), (snap) => {
+    state.votes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    state.votesReady = true;
+    state.error = null;
+    emit("votes");
   }, (err) => {
-    state.votersReady = true;
-    state.error = err.message;
+    state.votesReady = true;
+    state.error = `No se pudieron cargar los votos: ${err.message}`;
     emit("error");
   });
 
-  onAuthStateChanged(auth, (user) => {
-    state.user = user;
-    state.authReady = true;
-    state.error = null;
-    if (user) watchPrivate();
-    else stopPrivate();
-    emit("auth");
-  });
+  loadTranscriptFiles();
+  emit("init");
 }
 
 // ---------- Derivados ----------
 
 export function me() {
-  if (!state.user) return null;
-  return state.voters.find((v) => v.id === state.user.email) || null;
-}
-
-export function isAdmin() {
-  if (!state.user) return false;
-  return state.user.email === ADMIN_EMAIL || Boolean(me()?.isAdmin);
+  return state.voters.find((v) => v.id === state.voterId) || null;
 }
 
 export function myVote() {
-  if (!state.user) return null;
-  return state.votes.find((v) => v.id === state.user.email) || null;
+  return state.votes.find((v) => v.id === state.voterId) || null;
 }
 
 export function voterName(id) {
-  return state.voters.find((v) => v.id === id)?.name || id.split("@")[0];
+  return state.voters.find((v) => v.id === id)?.name || id;
 }
 
 /**
  * Calcula el conteo, el ranking (con empates) y la matriz votante × candidato.
- * Solo cuenta votos de votantes registrados y de candidatos que siguen existiendo.
+ * Solo cuenta votos de votantes de la lista y de candidatos que existen.
  */
 export function results() {
   const voterIds = new Set(state.voters.map((v) => v.id));
@@ -134,7 +159,7 @@ export function results() {
     voters: byCandidate.get(c.id),
     count: byCandidate.get(c.id).length,
   }));
-  rows.sort((a, b) => b.count - a.count || (a.candidate.order ?? 99) - (b.candidate.order ?? 99));
+  rows.sort((a, b) => b.count - a.count || a.candidate.order - b.candidate.order);
 
   // Ranking de competición: dos empatados en 1.º comparten el 1.º y el siguiente es 3.º.
   let rank = 0;
@@ -156,6 +181,7 @@ export function results() {
   } else if (b && c && b.count > 0 && b.count === c.count) {
     ties.push({ place: 2, rows: rows.filter((r) => r.count === b.count) });
   }
+
   return {
     rows,
     totalCast,

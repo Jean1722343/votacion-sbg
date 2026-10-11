@@ -11,7 +11,7 @@ export function shouldUpdate() {
 }
 
 export function render(root, { fresh }) {
-  if (!state.candidatesReady) {
+  if (!state.votesReady) {
     root.innerHTML = `<div class="boot"><p>Cargando…</p></div>`;
     return;
   }
@@ -22,7 +22,7 @@ export function render(root, { fresh }) {
   const open = state.config.votingOpen;
 
   if (!voter) {
-    root.innerHTML = `<section class="panel center narrow"><h1 class="h2">Solo votantes</h1><p class="muted">Tu cuenta es de administración y no está en la lista de votantes. Agrégate en Admin → Votantes si también vas a votar.</p></section>`;
+    root.innerHTML = `<section class="panel center narrow"><h1 class="h2">Solo votantes</h1><p class="muted">Tu nombre no está en la lista de votantes.</p></section>`;
     return;
   }
 
@@ -98,7 +98,7 @@ export function render(root, { fresh }) {
     });
     if (!ok) return;
     try {
-      await setDoc(doc(db, "votes", state.user.email), {
+      await setDoc(doc(db, "votes", state.voterId), {
         voterName: voter.name,
         picks: [...picks],
         createdAt: existing?.createdAt || serverTimestamp(),
@@ -120,7 +120,7 @@ export function render(root, { fresh }) {
     });
     if (!ok) return;
     try {
-      await deleteDoc(doc(db, "votes", state.user.email));
+      await deleteDoc(doc(db, "votes", state.voterId));
       picks = [];
       toast("Voto retirado");
       render(root, { fresh: false });
