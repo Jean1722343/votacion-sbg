@@ -8,5 +8,12 @@ export const firebaseConfig = {
   appId: "1:965771235257:web:b93be39e392c5760113068",
 };
 
+// Cada votante entra con una cuenta interna <id>@EMAIL_DOMAIN. Nadie ve ni escribe este correo.
+// Debe coincidir con el dominio escrito en firestore.rules.
+export const EMAIL_DOMAIN = "sbg-vota.app";
+
+// Largo mínimo de la contraseña (Firebase exige al menos 6).
+export const MIN_PASSWORD = 6;
+
 // Cada votante reparte este número de votos entre candidatos distintos.
 export const VOTES_PER_VOTER = 2;

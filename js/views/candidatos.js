@@ -1,4 +1,4 @@
-import { state, results, myVote, voterName } from "../store.js";
+import { state, results, myVote, voterName, me, viewedProfiles } from "../store.js";
 import { VOTES_PER_VOTER } from "../firebase-config.js";
 import { esc, avatar, accentOf, socialLinks, voterChip } from "../ui.js";
 
@@ -16,6 +16,10 @@ export function render(root) {
   const counts = new Map(r.rows.map((row) => [row.candidate.id, row]));
   const open = state.config.votingOpen;
   const hasVoted = mine.size > 0;
+  const seen = viewedProfiles();
+  const seenCount = state.candidates.filter((c) => seen.has(c.id)).length;
+  const total = state.candidates.length;
+  const first = me().name.split(" ")[0];
 
   root.innerHTML = `
     <section class="hero">
@@ -32,6 +36,25 @@ export function render(root) {
           ? `<a href="#/votar" class="btn ${hasVoted ? "btn-ghost" : "btn-primary"}">${hasVoted ? "Cambiar mi voto" : "Votar ahora →"}</a>`
           : `<span class="status-pill is-closed">Votación cerrada</span>`}
       </div>
+    </section>
+
+    <section class="guide" aria-label="Tu avance">
+      <p class="guide-hello">Hola, <b>${esc(first)}</b>. ${hasVoted ? "Ya votaste. ¡Gracias!" : open ? "Así va tu avance:" : "La votación está cerrada."}</p>
+      <ol class="guide-steps">
+        <li class="${seenCount === total && total ? "done" : seenCount || hasVoted ? "progress" : "now"}">
+          <span class="guide-num">${seenCount === total && total ? "✓" : "1"}</span>
+          <div><b>Revisa los perfiles</b><small>${seenCount} de ${total} vistos</small>
+            <div class="meter" style="--accent:var(--blue)"><i style="width:${total ? (seenCount / total) * 100 : 0}%"></i></div></div>
+        </li>
+        <li class="${hasVoted ? "done" : seenCount ? "now" : ""}">
+          <span class="guide-num">${hasVoted ? "✓" : "2"}</span>
+          <div><b>Vota por 2 personas</b><small>${hasVoted ? "Voto registrado" : open ? `<a href="#/votar">Ir a votar →</a>` : "Votación cerrada"}</small></div>
+        </li>
+        <li class="${hasVoted ? "now" : ""}">
+          <span class="guide-num">3</span>
+          <div><b>Mira los resultados</b><small><a href="#/resultados">En vivo →</a></small></div>
+        </li>
+      </ol>
     </section>
 
     ${state.candidates.length ? `
@@ -54,6 +77,7 @@ export function render(root) {
           <div class="cand-foot">
             <span class="tag">${interviews ? `${interviews} entrevista${interviews > 1 ? "s" : ""}` : "Sin entrevistas"}</span>
             ${mine.has(c.id) ? `<span class="tag tag-accent">Tu voto</span>` : ""}
+            ${seen.has(c.id) ? `<span class="tag tag-blue">Visto</span>` : `<span class="tag tag-ghost">Sin revisar</span>`}
           </div>
           <div class="cand-voters">
             ${row?.voters.length

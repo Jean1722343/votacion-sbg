@@ -1,4 +1,4 @@
-import { state, me, myVote } from "../store.js";
+import { state, me, myVote, viewedProfiles } from "../store.js";
 import { db, doc, setDoc, deleteDoc, serverTimestamp } from "../firebase.js";
 import { VOTES_PER_VOTER } from "../firebase-config.js";
 import { esc, avatar, accentOf, toast, confirmDialog, friendlyError } from "../ui.js";
@@ -93,7 +93,7 @@ export function render(root, { fresh }) {
     const names = picks.map((id) => byId.get(id).c.name);
     const ok = await confirmDialog({
       title: existing ? "¿Actualizar tu voto?" : "¿Confirmas tu voto?",
-      body: `<p>Vas a votar por:</p><ol class="confirm-list">${names.map((n) => `<li>${esc(n)}</li>`).join("")}</ol><p class="muted small">Tu nombre aparecerá junto a cada candidato que votaste.</p>`,
+      body: `${unseenNote()}<p>Vas a votar por:</p><ol class="confirm-list">${names.map((n) => `<li>${esc(n)}</li>`).join("")}</ol><p class="muted small">Tu nombre aparecerá junto a cada candidato que votaste.</p>`,
       confirm: existing ? "Actualizar" : "Votar",
     });
     if (!ok) return;
@@ -128,4 +128,11 @@ export function render(root, { fresh }) {
       toast(friendlyError(err), "error");
     }
   });
+}
+
+function unseenNote() {
+  const seen = viewedProfiles();
+  const unseen = state.candidates.filter((c) => !seen.has(c.id));
+  if (!unseen.length) return "";
+  return `<p class="banner banner-warn small">Aún no abres ${unseen.length === 1 ? "el perfil de" : "los perfiles de"} ${unseen.map((c) => `<b>${esc(c.name)}</b>`).join(", ")}. Puedes votar igual o revisarlos primero.</p>`;
 }

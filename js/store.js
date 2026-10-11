@@ -1,9 +1,11 @@
-import { db, collection, onSnapshot } from "./firebase.js";
+import {
+  auth, db, collection, doc, onSnapshot, setDoc, serverTimestamp, onAuthStateChanged,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as fbSignOut,
+  updatePassword, reauthenticateWithCredential, EmailAuthProvider,
+} from "./firebase.js";
 import { votacionAbierta, votantes } from "../data/config.js";
 import { candidatos } from "../data/candidatos.js";
-import { VOTES_PER_VOTER } from "./firebase-config.js";
-
-const SESSION_KEY = "votacion-sbg:votante";
+import { VOTES_PER_VOTER, EMAIL_DOMAIN } from "./firebase-config.js";
 
 // Normaliza los archivos de /data (en español) al modelo que usan las vistas.
 function toCandidate(c, i) {
@@ -40,8 +42,13 @@ function toCandidate(c, i) {
 }
 
 export const state = {
+  user: null,
+  authReady: false,
   voterId: null,
   voters: votantes.map((v) => ({ id: String(v.id), name: v.nombre, role: v.rol === "profesor" ? "profesor" : "equipo" })),
+  // Votantes que ya crearon su contraseña (colección pública "voters", solo marca de tiempo).
+  claimed: new Set(),
+  claimedReady: false,
   candidates: candidatos.map(toCandidate),
   votes: [],
   votesReady: false,
@@ -58,30 +65,61 @@ function emit(reason) {
   for (const fn of listeners) fn(reason);
 }
 
-// ---------- Sesión: solo el nombre, guardado en este navegador ----------
+// ---------- Cuentas: cada votante crea su propia contraseña ----------
 
-function readSession() {
-  try {
-    return localStorage.getItem(SESSION_KEY);
-  } catch {
-    return null;
-  }
+export const emailOf = (id) => `${id}@${EMAIL_DOMAIN}`;
+const idOf = (email) => (email || "").split("@")[0];
+
+export function isClaimed(id) {
+  return state.claimed.has(id);
 }
 
-export function signIn(id) {
-  state.voterId = id;
-  try {
-    localStorage.setItem(SESSION_KEY, id);
-  } catch {}
-  emit("auth");
+async function markClaimed(id) {
+  if (state.claimed.has(id)) return;
+  await setDoc(doc(db, "voters", id), { claimedAt: serverTimestamp() });
+}
+
+/** Primera vez: crea la cuenta del votante con la contraseña que eligió. */
+export async function createAccount(id, password) {
+  await createUserWithEmailAndPassword(auth, emailOf(id), password);
+  await markClaimed(id);
+}
+
+export async function signIn(id, password) {
+  await signInWithEmailAndPassword(auth, emailOf(id), password);
+  // Por si la cuenta se creó pero no alcanzó a marcarse.
+  await markClaimed(id).catch(() => {});
 }
 
 export function signOut() {
-  state.voterId = null;
+  return fbSignOut(auth);
+}
+
+export async function changePassword(current, next) {
+  const cred = EmailAuthProvider.credential(state.user.email, current);
+  await reauthenticateWithCredential(state.user, cred);
+  await updatePassword(state.user, next);
+}
+
+// ---------- Avance personal (perfiles vistos), guardado en este navegador ----------
+
+const viewedKey = () => `votacion-sbg:vistos:${state.voterId}`;
+
+export function viewedProfiles() {
   try {
-    localStorage.removeItem(SESSION_KEY);
+    return new Set(JSON.parse(localStorage.getItem(viewedKey()) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+export function markViewed(candidateId) {
+  const seen = viewedProfiles();
+  if (seen.has(candidateId)) return;
+  seen.add(candidateId);
+  try {
+    localStorage.setItem(viewedKey(), JSON.stringify([...seen]));
   } catch {}
-  emit("auth");
 }
 
 // Carga las transcripciones que están en archivos .txt aparte.
@@ -105,11 +143,12 @@ async function loadTranscriptFiles() {
   }
 }
 
-export function start() {
-  const saved = readSession();
-  if (saved && state.voters.some((v) => v.id === saved)) state.voterId = saved;
+let stopVotes = null;
 
-  onSnapshot(collection(db, "votes"), (snap) => {
+function watchVotes() {
+  stopVotes?.();
+  state.votesReady = false;
+  stopVotes = onSnapshot(collection(db, "votes"), (snap) => {
     state.votes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     state.votesReady = true;
     state.error = null;
@@ -119,9 +158,39 @@ export function start() {
     state.error = `No se pudieron cargar los votos: ${err.message}`;
     emit("error");
   });
+}
+
+export function start() {
+  onSnapshot(collection(db, "voters"), (snap) => {
+    state.claimed = new Set(snap.docs.map((d) => d.id));
+    state.claimedReady = true;
+    emit("voters");
+  }, () => {
+    state.claimedReady = true;
+    emit("voters");
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    const id = idOf(user?.email);
+    const known = user && state.voters.some((v) => v.id === id);
+    if (user && !known) {
+      // Cuenta que ya no está en data/config.js: se cierra la sesión.
+      fbSignOut(auth);
+      return;
+    }
+    state.user = known ? user : null;
+    state.voterId = known ? id : null;
+    state.authReady = true;
+    if (known) watchVotes();
+    else {
+      stopVotes?.();
+      stopVotes = null;
+      state.votes = [];
+    }
+    emit("auth");
+  });
 
   loadTranscriptFiles();
-  emit("init");
 }
 
 // ---------- Derivados ----------

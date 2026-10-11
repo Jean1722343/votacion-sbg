@@ -4,7 +4,7 @@ Web para que el equipo (4 integrantes + profesor asesor) elija a quién se queda
 
 Sitio: https://jean1722343.github.io/votacion-sbg/
 
-- **Acceso:** cada quien toca su nombre y entra. Sin contraseñas.
+- **Acceso:** cada quien toca su nombre. La primera vez crea su propia contraseña; después solo esa persona puede entrar y votar con ese nombre.
 - **Regla:** cada votante tiene **2 votos** y debe dárselos a **2 candidatos distintos**. Los dos con más votos quedan en 1.º y 2.º lugar.
 - **Transparencia:** cada candidato muestra quién votó por él.
 - **Expediente:** perfil, redes y entrevistas (virtuales o presenciales) con audio/video y transcripción con buscador.
@@ -36,9 +36,23 @@ Formato de transcripción (una línea por intervención):
 - Firebase Firestore solo guarda los votos (`votes/{idVotante}`), en tiempo real.
 - Paleta oficial SBG con Space Grotesk + Inter. No se usan Amazon Ember ni logos oficiales (activos bajo NDA).
 
+## Contraseñas
+
+- Cada votante tiene una cuenta interna `<id>@sbg-vota.app` (el `id` de `data/config.js`). Nadie ve ni escribe ese correo.
+- La primera persona que toca un nombre crea la contraseña de ese nombre; por eso conviene que cada quien entre pronto.
+- Cada quien puede cambiar su contraseña desde su menú (arriba a la derecha).
+- **Si alguien olvida su contraseña o alguien más tomó su nombre:** en Firebase Console → Authentication → Users, borra la cuenta `<id>@sbg-vota.app`, y en Firestore → Data → `voters`, borra el documento `<id>`. El nombre vuelve a aparecer como "Primera vez". Su voto (`votes/<id>`) se conserva; bórralo también si fue de otra persona.
+
 ## Reglas de Firestore
 
-`firestore.rules` exige que cada voto tenga exactamente 2 candidatos distintos y bloquea cualquier otra colección. Como no hay contraseñas, la identidad del votante es de confianza: cualquiera con el enlace podría votar a nombre de otro. Si cambias las reglas, pégalas en Firebase Console → Firestore → Reglas → Publicar.
+`firestore.rules` garantiza en el servidor que:
+
+- solo el dueño de cada nombre escribe su voto, con exactamente 2 candidatos distintos;
+- solo votantes con sesión pueden leer los votos;
+- solo el dueño marca su nombre como "con contraseña";
+- todo lo demás está bloqueado.
+
+Si cambias las reglas, pégalas en Firebase Console → Firestore → Reglas → Publicar.
 
 ## Privacidad
 

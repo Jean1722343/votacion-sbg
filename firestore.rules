@@ -1,17 +1,21 @@
 rules_version = '2';
 
 // Votación Group Growth · AWS Student Builder Group
-// Acceso solo con el nombre (sin cuentas). Firestore guarda únicamente los votos:
-// - cualquiera puede leerlos (los resultados son públicos para el equipo);
-// - cada voto es un documento votes/{idVotante} con exactamente 2 candidatos distintos;
-// - candidatos, votantes y apertura de la votación viven en /data del repo.
+// Cada votante crea su propia contraseña la primera vez (cuenta <id>@sbg-vota.app).
+// - voters/{id}: marca pública de "ya creó contraseña"; solo la puede crear el dueño.
+// - votes/{id}: solo el dueño escribe su voto (2 candidatos distintos); lo leen los votantes con sesión.
+// Candidatos, lista de votantes y apertura de la votación viven en /data del repo.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function validVote(id) {
+    function isOwner(id) {
+      return request.auth != null
+        && request.auth.token.email == id + '@sbg-vota.app';
+    }
+
+    function validVote() {
       let d = request.resource.data;
-      return id.matches('^[a-z0-9-]{1,40}$')
-        && d.keys().hasOnly(['voterName', 'picks', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['voterName', 'picks', 'createdAt', 'updatedAt'])
         && d.voterName is string && d.voterName.size() <= 80
         && d.picks is list
         && d.picks.size() == 2
@@ -22,10 +26,18 @@ service cloud.firestore {
         && d.updatedAt == request.time;
     }
 
-    match /votes/{id} {
+    match /voters/{id} {
       allow read: if true;
-      allow create, update: if validVote(id);
-      allow delete: if true;
+      allow create: if isOwner(id)
+        && request.resource.data.keys().hasOnly(['claimedAt'])
+        && request.resource.data.claimedAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /votes/{id} {
+      allow read: if request.auth != null;
+      allow create, update: if isOwner(id) && validVote();
+      allow delete: if isOwner(id);
     }
 
     match /{document=**} {

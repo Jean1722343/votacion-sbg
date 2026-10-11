@@ -1,4 +1,4 @@
-import { state, results, myVote, voterName } from "../store.js";
+import { state, results, myVote, voterName, markViewed } from "../store.js";
 import {
   esc, avatar, accentOf, socialLinks, voterChip, mediaEmbed, renderTranscript,
   formatDate, safeUrl, wordCount, toast,
@@ -23,6 +23,7 @@ export function render(root, { params, fresh }) {
     root.innerHTML = `<section class="panel center narrow"><h1 class="h2">No encontrado</h1><p><a href="#/">← Volver a candidatos</a></p></section>`;
     return;
   }
+  markViewed(c.id);
   if (fresh) {
     openTranscripts.clear();
     queries.clear();

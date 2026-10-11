@@ -1,5 +1,6 @@
-import { state, start, subscribe, me, myVote, signOut } from "./store.js";
-import { esc, initials } from "./ui.js";
+import { state, start, subscribe, me, myVote, signOut, changePassword } from "./store.js";
+import { MIN_PASSWORD } from "./firebase-config.js";
+import { esc, initials, toast, friendlyError } from "./ui.js";
 import * as loginView from "./views/login.js";
 import * as candidatosView from "./views/candidatos.js";
 import * as perfilView from "./views/perfil.js";
@@ -51,18 +52,81 @@ function renderTopbar(navKey) {
       </nav>
       <div class="me">
         <span class="status-pill ${open ? "is-open" : "is-closed"}" title="Estado de la votación">${open ? "Abierta" : "Cerrada"}</span>
-        <span class="me-avatar" title="${esc(voter.name)}">${esc(initials(voter.name))}</span>
-        <button class="btn btn-ghost btn-sm" id="logout">Salir</button>
+        <div class="menu">
+          <button class="me-btn" id="me-btn" aria-haspopup="menu" aria-expanded="false">
+            <span class="me-avatar">${esc(initials(voter.name))}</span>
+            <span class="me-name">${esc(voter.name.split(" ")[0])}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+          <div class="menu-list" role="menu" hidden>
+            <p class="menu-head"><b>${esc(voter.name)}</b><small>${voter.role === "profesor" ? "Profesor asesor" : "Equipo"}</small></p>
+            <button role="menuitem" data-act="password">🔑 Cambiar contraseña</button>
+            <button role="menuitem" data-act="logout">↩ Salir</button>
+          </div>
+        </div>
       </div>
     </div>`;
-  topbar.querySelector("#logout").addEventListener("click", signOut);
+
+  const btn = topbar.querySelector("#me-btn");
+  const list = topbar.querySelector(".menu-list");
+  const close = () => {
+    list.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+  };
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    list.hidden = !list.hidden;
+    btn.setAttribute("aria-expanded", String(!list.hidden));
+  });
+  list.querySelector('[data-act="logout"]').addEventListener("click", () => {
+    close();
+    signOut();
+  });
+  list.querySelector('[data-act="password"]').addEventListener("click", () => {
+    close();
+    openPasswordDialog();
+  });
+}
+
+function openPasswordDialog() {
+  const dialog = document.getElementById("dialog");
+  dialog.innerHTML = `
+    <form class="dialog-card" id="pw-change" novalidate>
+      <h3>Cambiar contraseña</h3>
+      <label class="field"><span>Contraseña actual</span><input name="current" type="password" autocomplete="current-password" required /></label>
+      <label class="field"><span>Nueva contraseña</span><input name="next" type="password" autocomplete="new-password" minlength="${MIN_PASSWORD}" required /></label>
+      <label class="field"><span>Repite la nueva</span><input name="next2" type="password" autocomplete="new-password" required /></label>
+      <p class="form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-ghost" value="cancel">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>`;
+  dialog.showModal();
+  const form = dialog.querySelector("form");
+  const error = form.querySelector(".form-error");
+  form.querySelector('[value="cancel"]').addEventListener("click", () => dialog.close());
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (form.next.value.length < MIN_PASSWORD) return (error.textContent = `Mínimo ${MIN_PASSWORD} caracteres.`);
+    if (form.next.value !== form.next2.value) return (error.textContent = "Las contraseñas nuevas no coinciden.");
+    try {
+      await changePassword(form.current.value, form.next.value);
+      dialog.close();
+      toast("Contraseña actualizada");
+    } catch (err) {
+      error.textContent = err.code === "auth/invalid-credential" || err.code === "auth/wrong-password"
+        ? "La contraseña actual no es correcta."
+        : friendlyError(err);
+    }
+  });
 }
 
 function render(reason = "nav") {
+  if (!state.authReady || !state.claimedReady) return;
   if (!me()) {
     renderTopbar();
-    current = null;
-    loginView.render(root);
+    mount(loginView, [], reason);
     return;
   }
   const { route, params } = parseHash();
@@ -83,6 +147,14 @@ function mount(view, params, reason) {
   current = { view, key };
   view.render(root, { params, reason, fresh: !same });
 }
+
+// Cierra el menú de cuenta al tocar fuera de él o con Escape.
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".menu")) topbar.querySelector(".menu-list")?.setAttribute("hidden", "");
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") topbar.querySelector(".menu-list")?.setAttribute("hidden", "");
+});
 
 window.addEventListener("hashchange", () => render("nav"));
 subscribe((reason) => render(reason));
