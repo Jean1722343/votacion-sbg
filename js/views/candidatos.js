@@ -1,6 +1,6 @@
-import { state, myVote, me, viewedProfiles } from "../store.js";
-import { VOTES_PER_VOTER } from "../firebase-config.js";
-import { esc, avatar, accentOf, socialLinks, formatDateTime } from "../ui.js";
+import { state, myVote, me, viewedProfiles } from "../store.js?v=20261011034327";
+import { VOTES_PER_VOTER } from "../firebase-config.js?v=20261011034327";
+import { esc, avatar, accentOf, socialLinks, formatDateTime } from "../ui.js?v=20261011034327";
 
 export function shouldUpdate() {
   return true;

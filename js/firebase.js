@@ -6,7 +6,7 @@ import {
 import {
   getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { firebaseConfig } from "./firebase-config.js?v=20261011034327";
 
 // Firebase guarda las cuentas (contraseña de cada votante) y los votos.
 // Candidatos y lista de votantes viven en /data del repo.

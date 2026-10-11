@@ -19,7 +19,7 @@ Sitio: https://jean1722343.github.io/votacion-sbg/
 | Audios, videos y fotos | carpeta `media/` (o links de Drive / YouTube / SoundCloud) |
 | Transcripciones largas | carpeta `transcripciones/` (archivos `.txt`) |
 
-Después de editar, sube los cambios (`git add -A && git commit -m "..." && git push`). GitHub Pages se actualiza en ~1 minuto.
+Después de editar, corre `python tools/version.py` (evita que los navegadores mezclen archivos viejos y nuevos) y sube los cambios (`git add -A && git commit -m "..." && git push`). GitHub Pages se actualiza en ~1 minuto.
 
 Formato de transcripción (una línea por intervención):
 

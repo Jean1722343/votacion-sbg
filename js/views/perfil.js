@@ -1,8 +1,8 @@
-import { state, myVote, markViewed } from "../store.js";
+import { state, myVote, markViewed } from "../store.js?v=20261011034327";
 import {
   esc, avatar, accentOf, socialLinks, mediaEmbed, renderTranscript,
   formatDate, safeUrl, wordCount, toast,
-} from "../ui.js";
+} from "../ui.js?v=20261011034327";
 
 const openTranscripts = new Set();
 const queries = new Map();

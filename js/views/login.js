@@ -1,6 +1,7 @@
-import { state, isClaimed, createAccount, signIn } from "../store.js";
-import { VOTES_PER_VOTER, MIN_PASSWORD } from "../firebase-config.js";
-import { esc, initials, friendlyError, voterColor } from "../ui.js";
+import { admin } from "../../data/config.js?v=20261011034327";
+import { state, isClaimed, createAccount, signIn } from "../store.js?v=20261011034327";
+import { VOTES_PER_VOTER, MIN_PASSWORD } from "../firebase-config.js?v=20261011034327";
+import { esc, initials, friendlyError, voterColor } from "../ui.js?v=20261011034327";
 
 let selected = null;
 // Si la cuenta existe pero aún no aparece como reclamada, forzamos el modo "entrar".
@@ -100,10 +101,10 @@ function passwordStep() {
           <li data-check="match">Las dos coinciden</li>
         </ul>` : ""}
       <p class="form-error" id="pw-error" role="alert"></p>
-      <button class="btn btn-primary btn-block" type="submit" ${creating ? "disabled" : ""}>${creating ? "Crear contraseña y entrar" : "Entrar"}</button>
+      <button class="btn btn-primary btn-block" type="submit">${creating ? "Crear contraseña y entrar" : "Entrar"}</button>
       <p class="muted small hint">${creating
         ? "Guárdala bien. Si la olvidas, Jean tendrá que restablecerla desde Firebase."
-        : "¿La olvidaste? Pídele a Jean que la restablezca."}</p>
+        : selected === admin ? "¿La olvidaste? Avísale a Claude o restablécela en Firebase → Authentication." : "¿La olvidaste? Pídele a Jean que la restablezca."}</p>
     </form>`;
 }
 
@@ -147,8 +148,9 @@ function bindPasswordStep(root, card) {
     e.currentTarget.setAttribute("aria-label", show ? "Ocultar contraseña" : "Mostrar contraseña");
   });
 
-  const validate = () => {
-    if (!creating) return form.pw.value.length > 0;
+  // Actualiza el medidor y la lista de requisitos mientras escribe.
+  const updateHints = () => {
+    if (!creating) return;
     const pw = form.pw.value;
     const okLen = pw.length >= MIN_PASSWORD;
     const okMatch = okLen && pw === form.pw2.value;
@@ -159,17 +161,32 @@ function bindPasswordStep(root, card) {
     bar.querySelector("span").textContent = pw ? `Seguridad: ${LEVELS[score][0]}` : `Escribe al menos ${MIN_PASSWORD} caracteres`;
     card.querySelector('[data-check="len"]').classList.toggle("ok", okLen);
     card.querySelector('[data-check="match"]').classList.toggle("ok", okMatch);
-    return okMatch;
+  };
+
+  // El botón nunca se bloquea: al pulsarlo explicamos qué falta.
+  const problem = () => {
+    const pw = form.pw.value;
+    if (!pw) return [form.pw, creating ? "Escribe la contraseña que quieres usar." : "Escribe tu contraseña."];
+    if (!creating) return null;
+    if (pw.length < MIN_PASSWORD) return [form.pw, `La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`];
+    if (!form.pw2.value) return [form.pw2, "Repite tu contraseña en la segunda casilla."];
+    if (pw !== form.pw2.value) return [form.pw2, "Las dos contraseñas no coinciden. Vuelve a escribirla abajo."];
+    return null;
   };
 
   form.addEventListener("input", () => {
     error.textContent = "";
-    submit.disabled = !validate();
+    updateHints();
   });
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    const issue = problem();
+    if (issue) {
+      error.textContent = issue[1];
+      issue[0].focus();
+      return;
+    }
     const id = selected;
     submit.disabled = true;
     submit.textContent = creating ? "Creando…" : "Entrando…";
@@ -186,9 +203,10 @@ function bindPasswordStep(root, card) {
         root.querySelector("#pw-error").textContent = "Este nombre ya tiene contraseña. Escríbela para entrar.";
         return;
       }
+      console.error("[votacion] login", err);
       error.textContent = err.code === "auth/invalid-credential" || err.code === "auth/wrong-password"
         ? "Contraseña incorrecta. Revisa mayúsculas y vuelve a intentar."
-        : friendlyError(err);
+        : `${friendlyError(err)}${err.code ? ` (${err.code})` : ""}`;
       submit.disabled = false;
       submit.textContent = creating ? "Crear contraseña y entrar" : "Entrar";
       form.pw.select();

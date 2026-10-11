@@ -1,7 +1,7 @@
-import { state, me, myVote, viewedProfiles } from "../store.js";
-import { db, doc, setDoc, deleteDoc, serverTimestamp } from "../firebase.js";
-import { VOTES_PER_VOTER } from "../firebase-config.js";
-import { esc, avatar, accentOf, toast, confirmDialog, friendlyError, formatDateTime } from "../ui.js";
+import { state, me, myVote, viewedProfiles } from "../store.js?v=20261011034327";
+import { db, doc, setDoc, deleteDoc, serverTimestamp } from "../firebase.js?v=20261011034327";
+import { VOTES_PER_VOTER } from "../firebase-config.js?v=20261011034327";
+import { esc, avatar, accentOf, toast, confirmDialog, friendlyError, formatDateTime } from "../ui.js?v=20261011034327";
 
 let picks = [];
 // Con voto ya registrado se muestra el comprobante; "editing" abre la boleta para cambiarlo.

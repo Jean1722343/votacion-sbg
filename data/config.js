@@ -12,7 +12,7 @@ export const admin = "jean";
 export const votantes = [
   { id: "jean", nombre: "Jean", rol: "equipo" },
   { id: "joan", nombre: "Joan", rol: "equipo" },
-  { id: "jeovani", nombre: "Jeovani", rol: "equipo" },
+  { id: "jeovanni", nombre: "Jeovanni", rol: "equipo" },
   { id: "geronimo", nombre: "Gerónimo", rol: "equipo" },
   { id: "tutora", nombre: "Tutora", rol: "tutora" },
 ];

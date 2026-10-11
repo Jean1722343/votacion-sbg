@@ -1,11 +1,11 @@
-import { state, start, subscribe, me, myVote, isAdmin, signOut, changePassword } from "./store.js";
-import { MIN_PASSWORD } from "./firebase-config.js";
-import { esc, initials, toast, friendlyError, voterColor } from "./ui.js";
-import * as loginView from "./views/login.js";
-import * as candidatosView from "./views/candidatos.js";
-import * as perfilView from "./views/perfil.js";
-import * as votarView from "./views/votar.js";
-import * as resultadosView from "./views/resultados.js";
+import { state, start, subscribe, me, myVote, isAdmin, signOut, changePassword } from "./store.js?v=20261011034327";
+import { MIN_PASSWORD } from "./firebase-config.js?v=20261011034327";
+import { esc, initials, toast, friendlyError, voterColor } from "./ui.js?v=20261011034327";
+import * as loginView from "./views/login.js?v=20261011034327";
+import * as candidatosView from "./views/candidatos.js?v=20261011034327";
+import * as perfilView from "./views/perfil.js?v=20261011034327";
+import * as votarView from "./views/votar.js?v=20261011034327";
+import * as resultadosView from "./views/resultados.js?v=20261011034327";
 
 const root = document.getElementById("app");
 const topbar = document.getElementById("topbar");
@@ -149,7 +149,19 @@ function mount(view, params, reason) {
   if (same && reason !== "nav" && view.shouldUpdate && !view.shouldUpdate(reason)) return;
   if (!same) window.scrollTo({ top: 0 });
   current = { view, key };
-  view.render(root, { params, reason, fresh: !same });
+  try {
+    view.render(root, { params, reason, fresh: !same });
+  } catch (err) {
+    // Nunca dejar la pantalla congelada: mostrar qué pasó y cómo salir.
+    console.error("[votacion] render", err);
+    current = null;
+    root.innerHTML = `
+      <section class="panel center narrow">
+        <h1 class="h2">Algo falló al mostrar esta pantalla</h1>
+        <p class="muted">${esc(err.message)}</p>
+        <p><button class="btn btn-primary" onclick="location.reload()">Recargar</button></p>
+      </section>`;
+  }
 }
 
 // Cierra el menú de cuenta al tocar fuera de él o con Escape.
