@@ -1,6 +1,6 @@
 import { state, isClaimed, createAccount, signIn } from "../store.js";
 import { VOTES_PER_VOTER, MIN_PASSWORD } from "../firebase-config.js";
-import { esc, initials, friendlyError } from "../ui.js";
+import { esc, initials, friendlyError, voterColor } from "../ui.js";
 
 let selected = null;
 // Si la cuenta existe pero aún no aparece como reclamada, forzamos el modo "entrar".
@@ -46,7 +46,7 @@ function nameStep() {
         const claimed = isClaimed(v.id);
         return `
         <button type="button" class="voter-option" data-id="${esc(v.id)}" role="listitem">
-          <span class="voter-dot lg">${esc(initials(v.name))}</span>
+          <span class="voter-dot lg" style="--vc:${voterColor(v.name)}">${esc(initials(v.name))}</span>
           <span class="voter-text"><b>${esc(v.name)}</b><small>${esc(v.roleLabel)}</small></span>
           <span class="tag tag-sm ${claimed ? "" : "tag-accent"}">${claimed ? "🔒 Con contraseña" : "✨ Primera vez"}</span>
           <span class="chev" aria-hidden="true">›</span>
@@ -74,7 +74,7 @@ function passwordStep() {
   return `
     <button type="button" class="link-btn back" id="back">← No soy ${esc(first)}</button>
     <div class="who">
-      <span class="voter-dot xl">${esc(initials(voter.name))}</span>
+      <span class="voter-dot xl" style="--vc:${voterColor(voter.name)}">${esc(initials(voter.name))}</span>
       <div>
         <h2 class="h3">Hola, ${esc(first)} 👋</h2>
         <p class="muted small">${creating ? "Es tu primera vez. Crea una contraseña que solo tú sepas." : "Escribe tu contraseña para entrar."}</p>

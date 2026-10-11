@@ -141,7 +141,7 @@ mark { background: color-mix(in srgb, var(--orange) 35%, transparent); color: va
 .nav-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; border-radius: 999px; background: var(--orange); color: var(--squid); font-size: 0.7rem; font-weight: 700; padding: 0 5px; }
 .nav-badge.ok { background: var(--mint); }
 .me { display: flex; align-items: center; gap: 0.6rem; }
-.me-avatar { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--purple); color: #fff; font: 700 0.8rem var(--font-display); }
+.me-avatar { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--vc, var(--purple)); color: var(--squid); font: 700 0.8rem var(--font-display); }
 .status-pill { font-family: var(--font-mono); font-size: 0.72rem; padding: 0.25rem 0.6rem; border-radius: 999px; border: 1px solid; white-space: nowrap; }
 .status-pill::before { content: "● "; }
 .status-pill.is-open { color: var(--mint); border-color: color-mix(in srgb, var(--mint) 45%, transparent); background: color-mix(in srgb, var(--mint) 8%, transparent); }
@@ -210,7 +210,7 @@ input[type="checkbox"], input[type="radio"] { width: auto; accent-color: var(--o
 
 .voter-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.6rem 0.2rem 0.2rem; border-radius: 999px; background: var(--squid); border: 1px solid var(--line); color: var(--text); font-size: 0.82rem; white-space: nowrap; }
 .voter-chip.sm { font-size: 0.74rem; padding-right: 0.5rem; }
-.voter-dot { width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; background: var(--purple); color: #fff; font: 700 0.62rem var(--font-display); flex: none; }
+.voter-dot { width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; background: var(--vc, var(--purple)); color: var(--squid); font: 700 0.62rem var(--font-display); flex: none; }
 .voter-chip.sm .voter-dot { width: 18px; height: 18px; font-size: 0.56rem; }
 .voter-dot.lg { width: 40px; height: 40px; border-radius: 10px; font-size: 0.9rem; }
 

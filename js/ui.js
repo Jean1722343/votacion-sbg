@@ -12,12 +12,20 @@ export function esc(value) {
 }
 
 export function initials(name) {
-  return String(name || "?")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() || "")
-    .join("");
+  const parts = String(name || "?").trim().split(/\s+/);
+  // Un solo nombre: dos letras ("Jean" → "Je") para distinguir nombres parecidos.
+  if (parts.length === 1) return parts[0].slice(0, 2).replace(/^./, (c) => c.toUpperCase());
+  return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("");
+}
+
+// Color fijo por votante (según su orden en data/config.js).
+const VOTER_COLORS = ["#FF9900", "#42B4FF", "#00E582", "#FF57E9", "#AD5CFF", "#FFC266"];
+const voterColorByName = new Map();
+export function registerVoters(voters) {
+  voters.forEach((v, i) => voterColorByName.set(v.name, VOTER_COLORS[i % VOTER_COLORS.length]));
+}
+export function voterColor(name) {
+  return voterColorByName.get(name) || "var(--purple)";
 }
 
 export function accentOf(candidate, index = 0) {
@@ -53,7 +61,7 @@ export function avatar(candidate, size = "md", index = 0) {
 }
 
 export function voterChip(name, extra = "") {
-  return `<span class="voter-chip ${extra}" title="${esc(name)}"><span class="voter-dot">${esc(initials(name))}</span>${esc(name)}</span>`;
+  return `<span class="voter-chip ${extra}" title="${esc(name)}"><span class="voter-dot" style="--vc:${voterColor(name)}">${esc(initials(name))}</span>${esc(name)}</span>`;
 }
 
 export const SOCIALS = [

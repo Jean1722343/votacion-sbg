@@ -1,6 +1,6 @@
 import { state, start, subscribe, me, myVote, isAdmin, signOut, changePassword } from "./store.js";
 import { MIN_PASSWORD } from "./firebase-config.js";
-import { esc, initials, toast, friendlyError } from "./ui.js";
+import { esc, initials, toast, friendlyError, voterColor } from "./ui.js";
 import * as loginView from "./views/login.js";
 import * as candidatosView from "./views/candidatos.js";
 import * as perfilView from "./views/perfil.js";
@@ -54,7 +54,7 @@ function renderTopbar(navKey) {
         <span class="status-pill ${open ? "is-open" : "is-closed"}" title="Estado de la votación">${open ? "Abierta" : "Cerrada"}</span>
         <div class="menu">
           <button class="me-btn" id="me-btn" aria-haspopup="menu" aria-expanded="false">
-            <span class="me-avatar">${esc(initials(voter.name))}</span>
+            <span class="me-avatar" style="--vc:${voterColor(voter.name)}">${esc(initials(voter.name))}</span>
             <span class="me-name">${esc(voter.name.split(" ")[0])}</span>
             <span aria-hidden="true">▾</span>
           </button>

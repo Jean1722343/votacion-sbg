@@ -6,6 +6,7 @@ import {
 import { votacionAbierta, votantes, admin } from "../data/config.js";
 import { candidatos } from "../data/candidatos.js";
 import { VOTES_PER_VOTER, EMAIL_DOMAIN } from "./firebase-config.js";
+import { registerVoters } from "./ui.js";
 
 // Normaliza los archivos de /data (en español) al modelo que usan las vistas.
 function toCandidate(c, i) {
@@ -63,6 +64,8 @@ export const state = {
   config: { votingOpen: votacionAbierta },
   error: null,
 };
+
+registerVoters(state.voters);
 
 const listeners = new Set();
 export function subscribe(fn) {
