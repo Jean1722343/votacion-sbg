@@ -33,7 +33,7 @@ Formato de transcripción (una línea por intervención):
 ## Stack
 
 - HTML + CSS + JavaScript (ES modules), sin build, publicado con GitHub Pages.
-- Firebase Firestore solo guarda los votos (`votes/{idVotante}`), en tiempo real.
+- Firebase Authentication guarda la contraseña de cada votante; Firestore guarda los votos (`votes/{idVotante}`) en tiempo real.
 - Paleta oficial SBG con Space Grotesk + Inter. No se usan Amazon Ember ni logos oficiales (activos bajo NDA).
 
 ## Contraseñas
