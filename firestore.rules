@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Votación Community Growth · AWS Student Builder Group
+// Votación Group Growth · AWS Student Builder Group
 // - Votantes: lista pública (solo nombres) para el selector de inicio de sesión.
 // - Todo lo demás solo lo ve un votante registrado o el admin.
 // - Cada votante tiene un único documento de voto: exactamente 2 candidatos distintos que existan.

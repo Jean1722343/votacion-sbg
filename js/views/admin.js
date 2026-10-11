@@ -117,7 +117,7 @@ function renderVotacion(body, root) {
   );
 
   body.querySelector("#init")?.addEventListener("click", () =>
-    run(() => setDoc(doc(db, "config", "app"), { votingOpen: true, title: "Community Growth" }), "Configuración creada"),
+    run(() => setDoc(doc(db, "config", "app"), { votingOpen: true, title: "Group Growth" }), "Configuración creada"),
   );
 
   body.querySelector("#self-add")?.addEventListener("click", () => {
@@ -267,7 +267,7 @@ function editorHtml() {
       <fieldset>
         <legend>Perfil</legend>
         ${field("Bio corta", "bio", d.bio, { textarea: true, rows: 3 })}
-        ${field("Motivación: ¿por qué Community Growth?", "motivation", d.motivation, { textarea: true, rows: 4 })}
+        ${field("Motivación: ¿por qué Group Growth?", "motivation", d.motivation, { textarea: true, rows: 4 })}
         ${field("Fortalezas", "strengths", (d.strengths || []).join(", "), { placeholder: "Diseño, Redes, Oratoria", hint: "Separadas por comas." })}
         ${field("Notas del equipo", "notes", d.notes, { textarea: true, rows: 3 })}
       </fieldset>
@@ -487,7 +487,7 @@ function renderVotantes(body, root) {
         name, role: form.role.value, isAdmin: form.isAdmin.checked, createdAt: serverTimestamp(),
       });
       const site = location.href.split("#")[0];
-      const message = `Hola ${name.split(" ")[0]} 👋 Ya puedes votar por Community Growth del AWS Student Builder Group.\n\n1) Entra a ${site}\n2) Elige tu nombre: ${name}\n3) Tu PIN: ${reused ? "(el que ya tenías)" : pin}\n\nTienes 2 votos para 2 personas distintas.`;
+      const message = `Hola ${name.split(" ")[0]} 👋 Ya puedes votar por Group Growth del AWS Student Builder Group.\n\n1) Entra a ${site}\n2) Elige tu nombre: ${name}\n3) Tu PIN: ${reused ? "(el que ya tenías)" : pin}\n\nTienes 2 votos para 2 personas distintas.`;
       await confirmDialog({
         title: `${name} dado de alta`,
         body: `${reused ? `<p class="banner banner-warn">Ya existía una cuenta con ${esc(email)}; se conservó su PIN anterior.</p>` : ""}

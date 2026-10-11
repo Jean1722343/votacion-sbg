@@ -47,7 +47,7 @@ function renderTopbar(navKey) {
     <div class="topbar-inner">
       <a href="#/" class="brand" aria-label="Inicio">
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="brand-text"><b>Student Builder Group</b><small>Community Growth · Votación</small></span>
+        <span class="brand-text"><b>Student Builder Group</b><small>Group Growth · Votación</small></span>
       </a>
       <nav class="nav" aria-label="Principal">
         ${link("", "Candidatos")}

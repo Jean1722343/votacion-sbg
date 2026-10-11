@@ -19,7 +19,7 @@ export function render(root) {
     <section class="login">
       <div class="login-hero">
         <p class="kicker">&gt;_ AWS Student Builder Group</p>
-        <h1 class="display">Elegimos a <span class="grad">Community Growth</span></h1>
+        <h1 class="display">Elegimos a <span class="grad">Group Growth</span></h1>
         <p class="lead">Cada integrante del equipo y el profesor asesor tienen <b>${VOTES_PER_VOTER} votos</b> para repartir entre candidatos distintos. Los dos con más votos ocupan el 1.º y 2.º lugar.</p>
         <ul class="login-steps">
           <li><span>01</span>Elige tu nombre</li>

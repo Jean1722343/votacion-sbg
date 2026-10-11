@@ -73,7 +73,7 @@ export function render(root, { params, fresh }) {
     <div class="profile-body">
       <div class="profile-main">
         ${c.bio ? `<section class="panel"><h2 class="h3">Sobre ${esc(c.name.split(" ")[0])}</h2><p class="prose">${esc(c.bio)}</p></section>` : ""}
-        ${c.motivation ? `<section class="panel"><h2 class="h3">¿Por qué quiere ser Community Growth?</h2><p class="prose">${esc(c.motivation)}</p></section>` : ""}
+        ${c.motivation ? `<section class="panel"><h2 class="h3">¿Por qué quiere ser Group Growth?</h2><p class="prose">${esc(c.motivation)}</p></section>` : ""}
 
         <section class="panel">
           <div class="panel-head">

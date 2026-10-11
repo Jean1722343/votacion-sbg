@@ -20,7 +20,7 @@ export function render(root) {
   root.innerHTML = `
     <section class="hero">
       <div>
-        <p class="kicker">&gt;_ Convocatoria · Community Growth</p>
+        <p class="kicker">&gt;_ Convocatoria · Group Growth</p>
         <h1 class="display">${state.candidates.length} candidatos, <span class="grad">2 lugares</span></h1>
         <p class="lead">Revisa cada perfil, sus redes y las entrevistas. Luego reparte tus ${VOTES_PER_VOTER} votos entre dos personas distintas.</p>
       </div>

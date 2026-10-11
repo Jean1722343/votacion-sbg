@@ -32,7 +32,7 @@ export function templateCandidates() {
       videoUrl: "",
       notes: "Así se ven las notas. Puedes pegar aquí impresiones rápidas de la reunión.",
       transcript: [
-        "[00:00] Jean: Gracias por venir. Cuéntanos por qué te interesa Community Growth.",
+        "[00:00] Jean: Gracias por venir. Cuéntanos por qué te interesa Group Growth.",
         "[00:12] Candidato: Me gusta organizar eventos y hacer crecer comunidades en mi universidad.",
         "[00:40] Jean: ¿Qué harías en tu primer mes?",
         "[00:45] Candidato: Lanzaría una campaña en redes y un taller introductorio de AWS.",

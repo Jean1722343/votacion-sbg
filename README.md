@@ -1,6 +1,6 @@
-# Votación · Community Growth — AWS Student Builder Group
+# Votación · Group Growth — AWS Student Builder Group
 
-Web para que el equipo (4 integrantes + profesor asesor) elija a quién se queda en **Community Growth**.
+Web para que el equipo (4 integrantes + profesor asesor) elija a quién se queda en **Group Growth**.
 
 - **Regla:** cada votante tiene **2 votos** y debe dárselos a **2 candidatos distintos**. Los dos con más votos quedan en 1.º y 2.º lugar.
 - **Transparencia:** cada candidato muestra quién votó por él.
