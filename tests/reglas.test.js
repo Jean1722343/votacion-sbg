@@ -116,6 +116,30 @@ describe("Contraseñas: marca de 'ya tiene contraseña'", () => {
   });
 });
 
+describe("Candidatos privados", () => {
+  beforeEach(() => env.withSecurityRulesDisabled((ctx) =>
+    setDoc(doc(ctx.firestore(), "candidates/candidato-x"), { nombre: "Ejemplo" })));
+  test("Los votantes con sesión pueden ver a los candidatos", async () => {
+    for (const id of ["jean", "joan", "jeovanni", "geronimo", "tutora"]) {
+      await assertSucceeds(getDocs(collection(as(id), "candidates")));
+    }
+  });
+  test("Sin sesión NO se ven los candidatos", async () => {
+    await assertFails(getDocs(collection(anon(), "candidates")));
+    await assertFails(getDoc(doc(anon(), "candidates/candidato-x")));
+  });
+  test("Una cuenta que no está en la lista NO ve los candidatos", async () => {
+    await assertFails(getDocs(collection(as("intruso"), "candidates")));
+    const fake = env.authenticatedContext("uid-x", { email: "jean@otro.com" }).firestore();
+    await assertFails(getDocs(collection(fake, "candidates")));
+  });
+  test("Solo Jean puede actualizar candidatos", async () => {
+    await assertSucceeds(setDoc(doc(as("jean"), "candidates/candidato-x"), { nombre: "Ejemplo 2" }));
+    await assertFails(setDoc(doc(as("joan"), "candidates/candidato-x"), { nombre: "Otra" }));
+    await assertFails(deleteDoc(doc(as("tutora"), "candidates/candidato-x")));
+  });
+});
+
 describe("Todo lo demás está bloqueado", () => {
   test("NO se puede escribir ni leer otras colecciones", async () => {
     await assertFails(setDoc(doc(as("jean"), "otra/x"), { a: 1 }));

@@ -649,3 +649,21 @@ legend { font: 600 0.75rem var(--font-mono); color: var(--orange); padding: 0 0.
 @media (max-width: 480px) {
   .receipt-picks { grid-template-columns: 1fr; }
 }
+
+/* ---------- Subir datos privados (admin) ---------- */
+.data-panel { border-color: color-mix(in srgb, var(--magenta) 35%, var(--line)); }
+.file-btn { position: relative; overflow: hidden; margin-top: 0.4rem; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* ---------- Respuestas de la postulación ---------- */
+.qa { display: grid; gap: 1rem; }
+.qa-item { display: grid; grid-template-columns: auto 1fr; gap: 0.9rem; padding: 1rem; border-radius: var(--radius-sm); background: var(--squid); border: 1px solid var(--line); border-left: 3px solid var(--accent); }
+.qa-num { font: 700 0.8rem var(--font-mono); color: var(--accent); padding-top: 0.15rem; }
+.qa-q { font: 600 0.95rem var(--font-display); color: var(--text); margin: 0 0 0.4rem; line-height: 1.35; }
+.qa-item .prose { font-size: 0.93rem; }
+.speak { display: grid; gap: 0.4rem; }
+.speak-dots { display: flex; align-items: center; gap: 0.3rem; }
+.speak-dots i { width: 22px; height: 8px; border-radius: 999px; background: var(--line); }
+.speak-dots i.on { background: var(--accent); }
+.speak-dots b { margin-left: 0.4rem; color: var(--text); font: 600 0.85rem var(--font-mono); }
+.tag-accent-soft { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 8%, transparent); }

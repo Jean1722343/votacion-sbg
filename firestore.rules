@@ -5,13 +5,22 @@ rules_version = '2';
 // - voters/{id}: marca pública de "ya creó contraseña"; solo la puede crear el dueño.
 // - votes/{id}: solo el dueño escribe y lee su voto (2 candidatos distintos).
 //   Solo el admin (jean) lee todos los votos: los resultados son privados.
-// Candidatos, lista de votantes y apertura de la votación viven en /data del repo.
+// - candidates/{id}: datos PRIVADOS de los postulantes; solo los leen los votantes de la lista,
+//   solo Jean los escribe. La lista de votantes también está en data/config.js.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function isOwner(id) {
       return request.auth != null
         && request.auth.token.email == id + '@sbg-vota.app';
+    }
+
+    // Votantes autorizados (mismos ids que data/config.js).
+    function isVoter() {
+      return request.auth != null && request.auth.token.email in [
+        'jean@sbg-vota.app', 'joan@sbg-vota.app', 'jeovanni@sbg-vota.app',
+        'geronimo@sbg-vota.app', 'tutora@sbg-vota.app'
+      ];
     }
 
     function validVote() {
@@ -33,6 +42,11 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['claimedAt'])
         && request.resource.data.claimedAt == request.time;
       allow update, delete: if false;
+    }
+
+    match /candidates/{id} {
+      allow read: if isVoter();
+      allow write: if isOwner('jean');
     }
 
     match /votes/{id} {

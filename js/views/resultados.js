@@ -1,6 +1,6 @@
-import { state, results, voterName } from "../store.js?v=20261011104644";
-import { VOTES_PER_VOTER } from "../firebase-config.js?v=20261011104644";
-import { esc, avatar, accentOf, voterChip, initials, formatDateTime } from "../ui.js?v=20261011104644";
+import { state, results, voterName, importCandidates } from "../store.js?v=20261013222157";
+import { VOTES_PER_VOTER } from "../firebase-config.js?v=20261013222157";
+import { esc, avatar, accentOf, voterChip, initials, formatDateTime, confirmDialog, toast, friendlyError } from "../ui.js?v=20261013222157";
 
 export function shouldUpdate() {
   return true;
@@ -9,7 +9,7 @@ export function shouldUpdate() {
 const pct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
 
 export function render(root) {
-  if (!state.votesReady) {
+  if (!state.votesReady || !state.candidatesReady) {
     root.innerHTML = `<div class="boot"><p>Cargando resultados…</p></div>`;
     return;
   }
@@ -157,9 +157,22 @@ export function render(root) {
           : `<p class="muted">Sin actividad todavía.</p>`}
       </section>
     </div>
+
+    <section class="panel data-panel">
+      <div class="panel-head">
+        <h2 class="h3">Datos de candidatos <span class="private-tag">🔒 Privado</span></h2>
+        <span class="muted small">${state.candidates.length} candidato${state.candidates.length === 1 ? "" : "s"}${state.candidatesSyncedAt ? ` · actualizado ${esc(formatDateTime(state.candidatesSyncedAt))}` : ""}</span>
+      </div>
+      <p class="muted small">La información de los postulantes vive en Firebase y solo la ven los votantes con sesión; no está en el repositorio público. Para actualizarla, genera <code>privado/candidatos.json</code> con <code>node tools/candidatos.mjs</code> y súbelo aquí.</p>
+      <label class="btn btn-ghost file-btn">
+        Subir candidatos.json
+        <input type="file" accept="application/json,.json" id="import-file" />
+      </label>
+    </section>
   `;
 
   root.querySelector("#export").addEventListener("click", () => exportCsv(r));
+  root.querySelector("#import-file").addEventListener("change", (e) => onImport(e.target));
 }
 
 function exportCsv(r) {
@@ -180,4 +193,34 @@ function exportCsv(r) {
   a.download = `votacion-core-team-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+async function onImport(input) {
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch {
+    toast("Ese archivo no es un JSON válido.", "error");
+    return;
+  }
+  const list = Array.isArray(data?.candidatos) ? data.candidatos : [];
+  const incoming = new Set(list.map((c) => c.id));
+  const removed = state.candidates.filter((c) => !incoming.has(c.id));
+  const votedRemoved = removed.filter((c) => results().rows.find((r) => r.candidate.id === c.id)?.count);
+  const ok = await confirmDialog({
+    title: "¿Actualizar candidatos?",
+    body: `<p>Se guardarán <b>${list.length}</b> candidato${list.length === 1 ? "" : "s"}${data.generado ? ` (archivo generado el ${esc(formatDateTime(data.generado))})` : ""}.</p>
+      ${removed.length ? `<p class="banner banner-warn small">Se quitarán: ${removed.map((c) => `<b>${esc(c.name)}</b>`).join(", ")}.${votedRemoved.length ? " ⚠️ Alguno ya tiene votos; esos votos dejarán de contar." : ""}</p>` : ""}`,
+    confirm: "Actualizar",
+  });
+  if (!ok) return;
+  try {
+    const res = await importCandidates(data);
+    toast(`Listo: ${res.saved} candidatos guardados${res.removed.length ? `, ${res.removed.length} quitados` : ""}.`);
+  } catch (err) {
+    toast(friendlyError(err), "error");
+  }
 }

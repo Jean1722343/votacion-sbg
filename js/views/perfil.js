@@ -1,8 +1,8 @@
-import { state, myVote, markViewed } from "../store.js?v=20261011104644";
+import { state, myVote, markViewed } from "../store.js?v=20261013222157";
 import {
   esc, avatar, accentOf, socialLinks, mediaEmbed, renderTranscript,
   formatDate, safeUrl, wordCount, toast,
-} from "../ui.js?v=20261011104644";
+} from "../ui.js?v=20261013222157";
 
 const openTranscripts = new Set();
 const queries = new Map();
@@ -12,7 +12,7 @@ export function shouldUpdate(reason) {
 }
 
 export function render(root, { params, fresh }) {
-  if (!state.votesReady) {
+  if (!state.votesReady || !state.candidatesReady) {
     root.innerHTML = `<div class="boot"><p>Cargando…</p></div>`;
     return;
   }
@@ -68,6 +68,21 @@ export function render(root, { params, fresh }) {
         ${c.bio ? `<section class="panel"><h2 class="h3">Sobre ${esc(c.name.split(" ")[0])}</h2><p class="prose">${esc(c.bio)}</p></section>` : ""}
         ${c.motivation ? `<section class="panel"><h2 class="h3">¿Por qué quiere entrar al Core Team?</h2><p class="prose">${esc(c.motivation)}</p></section>` : ""}
 
+        ${c.application?.answers.length ? `
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="h3">Respuestas de la postulación</h2>
+            ${c.application.date ? `<span class="muted small">Enviada el ${esc(formatDate(c.application.date))}</span>` : ""}
+          </div>
+          <div class="qa">
+            ${c.application.answers.map((a, n) => `
+              <article class="qa-item" style="--accent:${accent}">
+                <span class="qa-num">${String(n + 1).padStart(2, "0")}</span>
+                <div><h3 class="qa-q">${esc(a.question)}</h3><p class="prose">${esc(a.answer)}</p></div>
+              </article>`).join("")}
+          </div>
+        </section>` : ""}
+
         <section class="panel">
           <div class="panel-head">
             <h2 class="h3">Entrevistas</h2>
@@ -79,6 +94,19 @@ export function render(root, { params, fresh }) {
       </div>
 
       <aside class="profile-side">
+        ${c.application ? `
+        <section class="panel">
+          <h2 class="h4">De su postulación</h2>
+          <dl class="facts">
+            ${c.application.area ? `<dt>Quiere aportar en</dt><dd>${esc(c.application.area)}</dd>` : ""}
+            ${c.application.content ? `<dt>Videos y fotos</dt><dd>${esc(c.application.content)}</dd>` : ""}
+          </dl>
+          ${c.application.speaking ? `
+          <div class="speak">
+            <span class="muted small">Comodidad hablando en público</span>
+            <div class="speak-dots" role="img" aria-label="${c.application.speaking} de 5">${[1, 2, 3, 4, 5].map((n) => `<i class="${n <= c.application.speaking ? "on" : ""}" style="--accent:${accent}"></i>`).join("")}<b>${c.application.speaking}/5</b></div>
+          </div>` : ""}
+        </section>` : ""}
         ${facts.length ? `<section class="panel"><h2 class="h4">Datos</h2><dl class="facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl></section>` : ""}
         ${(c.strengths || []).length ? `<section class="panel"><h2 class="h4">Fortalezas</h2><div class="tags">${c.strengths.map((s) => `<span class="tag">${esc(s)}</span>`).join("")}</div></section>` : ""}
         ${c.links?.length ? `<section class="panel"><h2 class="h4">Enlaces</h2><ul class="link-list">${c.links.filter((l) => safeUrl(l.url)).map((l) => `<li><a href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.label || l.url)} ↗</a></li>`).join("")}</ul></section>` : ""}

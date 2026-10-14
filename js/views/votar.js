@@ -1,7 +1,7 @@
-import { state, me, myVote, viewedProfiles } from "../store.js?v=20261011104644";
-import { db, doc, setDoc, deleteDoc, serverTimestamp } from "../firebase.js?v=20261011104644";
-import { VOTES_PER_VOTER } from "../firebase-config.js?v=20261011104644";
-import { esc, avatar, accentOf, toast, confirmDialog, friendlyError, formatDateTime } from "../ui.js?v=20261011104644";
+import { state, me, myVote, viewedProfiles } from "../store.js?v=20261013222157";
+import { db, doc, setDoc, deleteDoc, serverTimestamp } from "../firebase.js?v=20261013222157";
+import { VOTES_PER_VOTER } from "../firebase-config.js?v=20261013222157";
+import { esc, avatar, accentOf, toast, confirmDialog, friendlyError, formatDateTime } from "../ui.js?v=20261013222157";
 
 let picks = [];
 // Con voto ya registrado se muestra el comprobante; "editing" abre la boleta para cambiarlo.
@@ -13,7 +13,7 @@ export function shouldUpdate() {
 }
 
 export function render(root, { fresh }) {
-  if (!state.votesReady) {
+  if (!state.votesReady || !state.candidatesReady) {
     root.innerHTML = `<div class="boot"><p>Cargando…</p></div>`;
     return;
   }

@@ -1,11 +1,11 @@
-import { state, start, subscribe, me, myVote, isAdmin, signOut, changePassword } from "./store.js?v=20261011104644";
-import { MIN_PASSWORD } from "./firebase-config.js?v=20261011104644";
-import { esc, initials, toast, friendlyError, voterColor } from "./ui.js?v=20261011104644";
-import * as loginView from "./views/login.js?v=20261011104644";
-import * as candidatosView from "./views/candidatos.js?v=20261011104644";
-import * as perfilView from "./views/perfil.js?v=20261011104644";
-import * as votarView from "./views/votar.js?v=20261011104644";
-import * as resultadosView from "./views/resultados.js?v=20261011104644";
+import { state, start, subscribe, me, myVote, isAdmin, signOut, changePassword } from "./store.js?v=20261013222157";
+import { MIN_PASSWORD } from "./firebase-config.js?v=20261013222157";
+import { esc, initials, toast, friendlyError, voterColor } from "./ui.js?v=20261013222157";
+import * as loginView from "./views/login.js?v=20261013222157";
+import * as candidatosView from "./views/candidatos.js?v=20261013222157";
+import * as perfilView from "./views/perfil.js?v=20261013222157";
+import * as votarView from "./views/votar.js?v=20261013222157";
+import * as resultadosView from "./views/resultados.js?v=20261013222157";
 
 const root = document.getElementById("app");
 const topbar = document.getElementById("topbar");

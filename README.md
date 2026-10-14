@@ -1,6 +1,6 @@
 # Votación · Core Team — AWS Student Builder Group
 
-Web para que el equipo (Jean, Joan, Jeovani, Gerónimo y la tutora) elija a quién entra al **Core Team** del AWS Student Builder Group.
+Web para que el equipo (Jean, Joan, Jeovanni, Gerónimo y la tutora) elija a quién entra al **Core Team** del AWS Student Builder Group.
 
 Sitio: https://jean1722343.github.io/votacion-sbg/
 
@@ -15,9 +15,11 @@ Sitio: https://jean1722343.github.io/votacion-sbg/
 | Qué | Archivo |
 | --- | --- |
 | Votantes y abrir/cerrar la votación | `data/config.js` |
-| Candidatos, redes y entrevistas | `data/candidatos.js` |
-| Audios, videos y fotos | carpeta `media/` (o links de Drive / YouTube / SoundCloud) |
-| Transcripciones largas | carpeta `transcripciones/` (archivos `.txt`) |
+| Candidatos, postulación y entrevistas (**privado**) | `privado/candidatos.js` (no se sube a GitHub) |
+| Transcripciones (**privado**) | `privado/transcripciones/*.txt` |
+| Audios y videos | links de Drive compartidos solo con el equipo, YouTube oculto o SoundCloud |
+
+Los datos de los candidatos **no viven en este repositorio**: se guardan en Firestore y solo los leen los 5 votantes con sesión. Para actualizarlos: `node tools/candidatos.mjs` genera `privado/candidatos.json`, y Jean lo sube desde la web en 🔒 Resultados → Datos de candidatos.
 
 Después de editar, corre `python tools/version.py` (evita que los navegadores mezclen archivos viejos y nuevos) y sube los cambios (`git add -A && git commit -m "..." && git push`). GitHub Pages se actualiza en ~1 minuto.
 
@@ -50,6 +52,7 @@ Formato de transcripción (una línea por intervención):
 - solo el dueño de cada nombre escribe su voto, con exactamente 2 candidatos distintos;
 - cada votante solo puede leer su propio voto; solo `jean` lee todos (resultados privados);
 - solo el dueño marca su nombre como "con contraseña";
+- los candidatos solo los leen los 5 votantes de la lista y solo Jean los actualiza;
 - todo lo demás está bloqueado.
 
 Si cambias las reglas, pégalas en Firebase Console → Firestore → Reglas → Publicar.
@@ -61,7 +64,7 @@ Todo se prueba contra un Firebase **local** (emulador), sin tocar la votación r
 ```
 cd tests
 npm install
-npm run test:reglas      # 22 pruebas de seguridad de firestore.rules
+npm run test:reglas      # 26 pruebas de seguridad de firestore.rules
 npm run emulador         # Firebase local para probar la web a mano
 ```
 
@@ -69,4 +72,4 @@ Con el emulador corriendo, abre `http://127.0.0.1:5173/?emulador` (sirviendo la 
 
 ## Privacidad
 
-El repositorio es público: todo lo que pongas en `data/`, `media/` y `transcripciones/` lo puede ver cualquiera que tenga el enlace del repo o del sitio.
+El repositorio es público, pero no contiene datos de los postulantes: esos están en `privado/` (ignorada por git) y en Firestore, protegidos por las reglas. No pongas nombres, respuestas ni transcripciones en `data/` ni en ningún archivo que se suba.

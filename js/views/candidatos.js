@@ -1,13 +1,13 @@
-import { state, myVote, me, viewedProfiles } from "../store.js?v=20261011104644";
-import { VOTES_PER_VOTER } from "../firebase-config.js?v=20261011104644";
-import { esc, avatar, accentOf, socialLinks, formatDateTime } from "../ui.js?v=20261011104644";
+import { state, myVote, me, viewedProfiles, isAdmin } from "../store.js?v=20261013222157";
+import { VOTES_PER_VOTER } from "../firebase-config.js?v=20261013222157";
+import { esc, avatar, accentOf, socialLinks, formatDateTime } from "../ui.js?v=20261013222157";
 
 export function shouldUpdate() {
   return true;
 }
 
 export function render(root) {
-  if (!state.votesReady) {
+  if (!state.votesReady || !state.candidatesReady) {
     root.innerHTML = `<div class="boot"><div class="boot-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p>Cargando candidatos…</p></div>`;
     return;
   }
@@ -26,7 +26,7 @@ export function render(root) {
       <div>
         <p class="kicker">&gt;_ Convocatoria · Core Team</p>
         <h1 class="display">Conoce a los <span class="grad">${total} candidatos</span></h1>
-        <p class="lead">Revisa cada perfil, sus redes y las entrevistas. Luego reparte tus ${VOTES_PER_VOTER} votos entre dos personas distintas. Tu voto es secreto.</p>
+        <p class="lead">Revisa cada perfil, sus respuestas de la postulación y las entrevistas. Luego reparte tus ${VOTES_PER_VOTER} votos entre dos personas distintas. Tu voto es secreto.</p>
       </div>
       <aside class="ballot-status ${vote ? "is-done" : ""}">
         ${vote ? `
@@ -74,9 +74,10 @@ export function render(root) {
           </div>
           <h2 class="cand-name">${esc(c.name)}</h2>
           <p class="cand-meta">${esc([c.career, c.semester].filter(Boolean).join(" · ") || "Perfil por completar")}</p>
-          ${c.bio ? `<p class="cand-bio">${esc(c.bio)}</p>` : ""}
+          ${c.bio || c.application?.answers[0] ? `<p class="cand-bio">${esc(c.bio || c.application.answers[0].answer)}</p>` : ""}
           ${socialLinks(c.socials, true)}
           <div class="cand-foot">
+            ${c.application?.area ? `<span class="tag tag-accent-soft">${esc(c.application.area)}</span>` : ""}
             <span class="tag">🎙 ${interviews ? `${interviews} entrevista${interviews > 1 ? "s" : ""}` : "Sin entrevistas"}</span>
             ${seen.has(c.id) ? `<span class="tag tag-blue">✓ Visto</span>` : `<span class="tag tag-ghost">Sin revisar</span>`}
           </div>
@@ -86,7 +87,7 @@ export function render(root) {
     </section>` : `
     <section class="panel center narrow">
       <h2 class="h3">Aún no hay candidatos</h2>
-      <p class="muted">Se agregan en <code>data/candidatos.js</code>.</p>
+      <p class="muted">${isAdmin() ? `Súbelos en <a href="#/resultados">🔒 Resultados → Datos de candidatos</a>.` : "Jean todavía no carga la información de los candidatos."}</p>
     </section>`}
   `;
 

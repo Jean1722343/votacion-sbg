@@ -1,18 +1,17 @@
 import {
-  auth, db, collection, doc, onSnapshot, setDoc, serverTimestamp, onAuthStateChanged,
+  auth, db, collection, doc, onSnapshot, setDoc, writeBatch, serverTimestamp, onAuthStateChanged,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as fbSignOut,
   updatePassword, reauthenticateWithCredential, EmailAuthProvider,
-} from "./firebase.js?v=20261011104644";
-import { votacionAbierta, votantes, admin } from "../data/config.js?v=20261011104644";
-import { candidatos } from "../data/candidatos.js?v=20261011104644";
-import { VOTES_PER_VOTER, EMAIL_DOMAIN } from "./firebase-config.js?v=20261011104644";
-import { registerVoters } from "./ui.js?v=20261011104644";
+} from "./firebase.js?v=20261013222157";
+import { votacionAbierta, votantes, admin } from "../data/config.js?v=20261013222157";
+import { VOTES_PER_VOTER, EMAIL_DOMAIN } from "./firebase-config.js?v=20261013222157";
+import { registerVoters } from "./ui.js?v=20261013222157";
 
-// Normaliza los archivos de /data (en español) al modelo que usan las vistas.
+// Normaliza un candidato (guardado en Firestore con campos en español) al modelo de las vistas.
 function toCandidate(c, i) {
   return {
     id: String(c.id),
-    order: i,
+    order: Number.isFinite(c.orden) ? c.orden : i,
     name: c.nombre || `Candidato ${i + 1}`,
     color: c.color || "",
     career: c.carrera || "",
@@ -27,6 +26,15 @@ function toCandidate(c, i) {
     notes: c.notas || "",
     socials: c.redes || {},
     links: (c.enlaces || []).map((l) => ({ label: l.etiqueta || "", url: l.url || "" })),
+    application: c.postulacion ? {
+      date: c.postulacion.fecha || "",
+      area: c.postulacion.area || "",
+      speaking: Number(c.postulacion.hablarEnPublico) || 0,
+      content: c.postulacion.contenido || "",
+      answers: (c.postulacion.respuestas || []).map((r) => (Array.isArray(r)
+        ? { question: r[0], answer: r[1] }
+        : { question: r.pregunta, answer: r.respuesta })),
+    } : null,
     interviews: (c.entrevistas || []).map((e) => ({
       title: e.titulo || "",
       date: e.fecha || "",
@@ -37,7 +45,6 @@ function toCandidate(c, i) {
       videoUrl: e.video || "",
       notes: e.notas || "",
       transcript: e.transcripcion || "",
-      transcriptFile: e.archivoTranscripcion || "",
     })),
   };
 }
@@ -58,7 +65,10 @@ export const state = {
   // Votantes que ya crearon su contraseña (colección pública "voters", solo marca de tiempo).
   claimed: new Set(),
   claimedReady: false,
-  candidates: candidatos.map(toCandidate),
+  // Candidatos: privados en Firestore, solo se cargan con sesión iniciada.
+  candidates: [],
+  candidatesReady: false,
+  candidatesSyncedAt: null,
   votes: [],
   votesReady: false,
   config: { votingOpen: votacionAbierta },
@@ -133,28 +143,8 @@ export function markViewed(candidateId) {
   } catch {}
 }
 
-// Carga las transcripciones que están en archivos .txt aparte.
-async function loadTranscriptFiles() {
-  const jobs = [];
-  for (const c of state.candidates) {
-    for (const iv of c.interviews) {
-      if (!iv.transcript && iv.transcriptFile) {
-        jobs.push(
-          fetch(iv.transcriptFile, { cache: "no-cache" })
-            .then((r) => (r.ok ? r.text() : ""))
-            .then((text) => (iv.transcript = text.trim()))
-            .catch(() => {}),
-        );
-      }
-    }
-  }
-  if (jobs.length) {
-    await Promise.all(jobs);
-    emit("candidates");
-  }
-}
-
 let stopVotes = null;
+let stopCandidates = null;
 
 // El admin escucha todos los votos; cada votante solo el suyo (las reglas lo exigen).
 function watchVotes() {
@@ -179,6 +169,65 @@ function watchVotes() {
   });
 }
 
+// Los candidatos son privados: viven en Firestore y solo los leen los votantes con sesión.
+function watchCandidates() {
+  stopCandidates?.();
+  state.candidatesReady = false;
+  stopCandidates = onSnapshot(collection(db, "candidates"), (snap) => {
+    const raw = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+    // Un candidato con datos mal formados no debe tumbar a los demás.
+    state.candidates = raw.flatMap((c, i) => {
+      try {
+        return [toCandidate(c, i)];
+      } catch (err) {
+        console.error("[votacion] candidato inválido", c.id, err);
+        return [];
+      }
+    }).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+    state.candidatesSyncedAt = raw.reduce((max, c) => (c.actualizado?.toMillis?.() > (max?.toMillis?.() || 0) ? c.actualizado : max), null);
+    state.candidatesReady = true;
+    emit("candidates");
+  }, (err) => {
+    state.candidatesReady = true;
+    state.error = `No se pudieron cargar los candidatos: ${err.message}`;
+    emit("error");
+  });
+}
+
+function stopWatching() {
+  stopVotes?.();
+  stopCandidates?.();
+  stopVotes = stopCandidates = null;
+  state.votes = [];
+  state.candidates = [];
+  state.votesReady = state.candidatesReady = false;
+}
+
+/**
+ * Solo admin: reemplaza los candidatos en Firestore con el contenido de privado/candidatos.json.
+ * Devuelve cuántos se guardaron y qué ids se borraron por no venir en el archivo.
+ */
+export async function importCandidates(data) {
+  const list = Array.isArray(data?.candidatos) ? data.candidatos : null;
+  if (!list || !list.length) throw new Error("El archivo no trae una lista de candidatos.");
+  const ids = new Set();
+  for (const c of list) {
+    if (!/^[a-z0-9-]{1,40}$/.test(c.id || "")) throw new Error(`id inválido: "${c.id}"`);
+    if (!c.nombre) throw new Error(`Falta el nombre del candidato ${c.id}.`);
+    if (ids.has(c.id)) throw new Error(`id repetido: ${c.id}`);
+    ids.add(c.id);
+  }
+  const removed = state.candidates.map((c) => c.id).filter((id) => !ids.has(id));
+  const batch = writeBatch(db);
+  list.forEach((c, i) => {
+    const { id, ...fields } = c;
+    batch.set(doc(db, "candidates", id), { ...fields, orden: Number.isFinite(c.orden) ? c.orden : i, actualizado: serverTimestamp() });
+  });
+  removed.forEach((id) => batch.delete(doc(db, "candidates", id)));
+  await batch.commit();
+  return { saved: list.length, removed };
+}
+
 export function start() {
   onSnapshot(collection(db, "voters"), (snap) => {
     state.claimed = new Set(snap.docs.map((d) => d.id));
@@ -200,16 +249,12 @@ export function start() {
     state.user = known ? user : null;
     state.voterId = known ? id : null;
     state.authReady = true;
-    if (known) watchVotes();
-    else {
-      stopVotes?.();
-      stopVotes = null;
-      state.votes = [];
-    }
+    if (known) {
+      watchVotes();
+      watchCandidates();
+    } else stopWatching();
     emit("auth");
   });
-
-  loadTranscriptFiles();
 }
 
 // ---------- Derivados ----------

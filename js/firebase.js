@@ -4,12 +4,12 @@ import {
   signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, connectAuthEmulator,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {
-  getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, serverTimestamp, connectFirestoreEmulator,
+  getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, serverTimestamp, connectFirestoreEmulator,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js?v=20261011104644";
+import { firebaseConfig } from "./firebase-config.js?v=20261013222157";
 
 // Firebase guarda las cuentas (contraseña de cada votante) y los votos.
-// Candidatos y lista de votantes viven en /data del repo.
+// Los candidatos son privados (colección "candidates"); la lista de votantes vive en data/config.js.
 // Pruebas locales: http://127.0.0.1:5173/?emulador usa el Firebase local (cd tests && npm run emulador).
 const useEmulator = ["localhost", "127.0.0.1"].includes(location.hostname)
   && new URLSearchParams(location.search).has("emulador");
@@ -25,5 +25,5 @@ if (useEmulator) {
 export {
   onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
   signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider,
-  collection, doc, onSnapshot, setDoc, deleteDoc, serverTimestamp,
+  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, serverTimestamp,
 };
